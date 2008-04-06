@@ -15,6 +15,8 @@ import identity.server.*;
 public class IdClient
 {
 	private String serverName;
+	
+	// something new!
 	private int registryPort = 5299;
 	private IdentityUUID userdb;
 
@@ -130,11 +132,11 @@ public class IdClient
 	public static void exit_message(String mesg)
 	{
 		System.err.println("\n"
-		                   + "--create <loginname> [<real name>] --password <password> 		create the new login name.\n"
-		                   + "--lookup <loginname> 	connects with the server and looks up the loginname and displays it.\n"
-		                   + "--reverse-lookup <UUID> 	looks up the UUID and displays all information with that UUID.\n"
-		                   + "--modify <oldloginname> <newloginname> --password <password> modify a given username\n"
-		                   + "--get users|uuids|all 	lists either the entire users,uuids or all information");
+          + "--create <loginname> [<real name>] --password <password> 		create the new login name.\n"
+          + "--lookup <loginname> 	connects with the server and looks up the loginname and displays it.\n"
+          + "--reverse-lookup <UUID> 	looks up the UUID and displays all information with that UUID.\n"
+          + "--modify <oldloginname> <newloginname> --password <password> modify a given username\n"
+          + "--get users|uuids|all 	lists either the entire users,uuids or all information");
 
 		System.err.println("Usage: java IdClient <host> [<registry-port>] [--switch]");
 		if (mesg != null) {
