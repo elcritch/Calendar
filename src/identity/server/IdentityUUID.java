@@ -2,7 +2,7 @@
  * 
  */
 package identity.server;
-
+import identity.calendar.*;
 import java.rmi.Remote;
 import java.util.UUID;
 
@@ -36,10 +36,8 @@ public interface IdentityUUID extends Remote {
 
    //debugging method, creates new array
    //public void empty() throws UserInfoException, java.rmi.RemoteException;
-   boolean addCalendarEntry(Ca);
-   boolean deleteCalendarEntry(UserInfo);
-   downloadCalendar(userinfo);
-
-   displayCalendarEntries(userinfo,newUserinfo);
+   boolean addCalendarEntry(CalendarEntry calEntry);
+   boolean deleteCalendarEntry(int seqNum);
+   CalendarEntry[] displayCalendarEntries(UserInfo userinfo,UserInfo newUserinfo);
 
 }
