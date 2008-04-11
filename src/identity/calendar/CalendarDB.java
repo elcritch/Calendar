@@ -125,6 +125,17 @@ public class CalendarDB {
 	}
 
 	/**
+	 * This method wraps deleting objects from the HashMap in a generic fashion. Overwrite this 
+	 * to change HashMap key types for a server class.
+	 * @param delete this entry from the hashmap
+	 * @throws IllegalArgumentException
+	 */
+	public void delEntry(CalendarEntry entry) {
+		db.remove(entry.id);
+	}
+
+	
+	/**
 	*  Returns a synchronizedList containing the UUID database.
 	* @return List synchronizedList containing the UUID database
 	 */
