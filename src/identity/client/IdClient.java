@@ -1,5 +1,5 @@
 package identity.client;
-import identity.calendar.*;
+
 import java.io.UnsupportedEncodingException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -259,46 +259,6 @@ public class IdClient
 					exit_message("Incorrect --get request ");
 				type = 4;
 			}
-			//switch 5
-			else if (argv[init].equals("--new") || argv[init].equals("-n")) {
-				init++;
-				// --get users|uuids|all
-				if (args.length>6)
-				{
-					/* encrypt the password */
-					System.out.println("Enter your password:");
-					byte[] password = new byte[255];
-					System.in.read(password);
-					byte[] encPassword = encryptPassword(password);
-					
-					
-					/* call the remote method */
-					int entryNb = getSeqEntry(args[2], encPassword, server);
-					entryNb = server.addEntry(entryNb, args[3],args[4],args[5],args[6],args[2], encPassword); 
-					//write the new entry in the calendar file
-					boolean entryAddedOk = writeEntry(args[3],args[4],args[5],args[6], new File(calendarPath), entryNb);
-					
-					try{
-						if (entryAddedOk)
-							System.out.println("New entry" + entryNb + " added");	
-						else
-							System.out.println("Cannot write in the file");
-					}
-					catch (NullPointerException np)
-					{
-						System.out.println("Invalid data format ");
-					}
-				}
-				else
-					System.out.println("usage: -a <loginName> <beginDate> <permission> <info> <duration>");
-	
-				if (argv[init].startsWith("-")) exit_message("Too many switches");
-				get = argv[init]; // just using extra var
-				user = get;
-				if (!( get.equals("users") || get.equals("uuids") || get.equals("all") ))
-					exit_message("Incorrect --get request ");
-				type = 5;
-			}
 			else {
 				exit_message("Unknown switch: " + argv[init]);
 			}
@@ -414,25 +374,6 @@ public class IdClient
 		       + "\n" + u.ipaddr
 		       + "\nDate Modified: "+u.lastdate;
 	}
-	/**
-	 * @author Vamsi
-	 * @return boolean true if succesful else false
-	 */
-	private boolean addCalendarEntry(CalendarEntry calObj)
-	{
-		return false;
-		/**
-		 * write the new entry in the calendar file
-		 * @param beginDate
-		 * @param permission
-		 * @param info
-		 * @param duration
-		 * @param calendarFile
-		 * @param seqNb
-		 * @return
-		 */
-	}
-
 }
 
 
