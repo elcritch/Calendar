@@ -3,7 +3,8 @@
  */
 package identity.calendar;
 
-import java.io.BufferedInputStream;
+import identity.server.UserInfoException;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,10 +13,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
-import java.util.Formatter;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 /**
  * @author jaremy
@@ -27,7 +26,7 @@ public class CalendarDB {
 	/**
 	 * This contains a generic flat hashmap that can contain either server or client event 
 	 * types. The flat database model allows this class to be used for both client/server
-	 * applications with generality. 
+	 * applications with generality. Overwrite this with correct generics type.
 	 */
 	public ConcurrentHashMap<Integer, CalendarEntry> db;
 	
@@ -35,17 +34,17 @@ public class CalendarDB {
 	public UUID useruuid;
 	public String username;
 	
-	//private File dbFile;
 	private String dbFileName;
     private File dbFile;
-    private boolean isServer;
-	/**
+
+    /**
 	 * @param datefmt
 	 */
-	@SuppressWarnings("unchecked") // ha, gotta love Java! ;)
-	public CalendarDB( String filename, boolean isServer ) {
+	public CalendarDB( ) {		
+	}
+	
+	public CalendarDB( String filename ) {
 		db = new ConcurrentHashMap<Integer, CalendarEntry>(50);
-		this.isServer = isServer;
 		
 		// read in entries
 		parseFile(filename);
@@ -111,6 +110,12 @@ public class CalendarDB {
 		
 	}
 	
+	/**
+	 * This method wraps adding objects to the hashmap in a generic fashion. Overwrite this 
+	 * to change hashmap key types.
+	 * @param entry add this entry to the hashmap
+	 * @throws IllegalArgumentException
+	 */
 	public void addEntry(CalendarEntry entry) throws IllegalArgumentException {
 		Integer key = entry.id;
 		if ( !db.containsKey(key))
@@ -143,7 +148,7 @@ public class CalendarDB {
 	 * checkpoint This will checkpoint the file. Need to use thread to spin this off. 
 	 * @throws UserInfoException 
 	 */
-	synchronized public void checkpoint()
+	synchronized public void writeFile()
 	{
 		// writeout file
 		BufferedWriter dbStreamOut;
@@ -155,7 +160,7 @@ public class CalendarDB {
 			dbStreamOut = new BufferedWriter( new FileWriter(dbFile,false) );
 			
 			for (CalendarEntry entry : dumparray)
-				dbStreamOut.write(entry.toString());
+				dbStreamOut.write(entry.toString()+"\n");
 			
 			dbStreamOut.close();
 			System.out.println("Checkpointed UUID ArrayList File: " + dbFile);
@@ -169,19 +174,11 @@ public class CalendarDB {
 			System.err.println("Error in checkpointing. " + e);
 			e.printStackTrace();
 		}
-
-
-		// write over old contents with the new
-		// use thread to do the timing.
 	}
 
-	public boolean containsEventId(int eid)
+	public boolean contains(Integer eid)
 	{
-		for (CalendarEntry ele : db.values()) {
-			if (ele.id == eid)
-				return true;
-		}
-		return false;
+		return db.containsKey(eid);
 	}
 
 
