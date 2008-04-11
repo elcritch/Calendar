@@ -1,5 +1,7 @@
 package identity.server;
 
+import identity.calendar.CalendarEntry;
+
 import java.io.File;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -311,6 +313,22 @@ public class IdentityServer implements IdentityUUID
 			ipaddr = null;
 		}
 		return ipaddr;
+	}
+
+	public boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean deleteCalendarEntry(int seqNum, UserInfo auth) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo,
+			UserInfo auth) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }
