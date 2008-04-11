@@ -35,8 +35,8 @@ public interface IdentityUUID extends Remote {
    public UUID	getUniqueUUID()  throws UserInfoException,java.rmi.RemoteException;
 
    //debugging method, creates new array
-   boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth);
-   boolean deleteCalendarEntry(int seqNum, UserInfo auth);
-   CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo,UserInfo auth);
+   boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth) throws UserInfoException,java.rmi.RemoteException;
+   boolean deleteCalendarEntry(int seqNum, UserInfo auth) throws UserInfoException,java.rmi.RemoteException;
+   CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo,UserInfo auth) throws UserInfoException,java.rmi.RemoteException;
 
 }
