@@ -3,16 +3,18 @@
  */
 package identity.calendar;
 
-import java.io.BufferedInputStream;
+import identity.server.UserInfoException;
+
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 /**
  * @author jaremy
@@ -24,25 +26,26 @@ public class CalendarDB {
 	/**
 	 * This contains a generic flat hashmap that can contain either server or client event 
 	 * types. The flat database model allows this class to be used for both client/server
-	 * applications with generality. 
+	 * applications with generality. Overwrite this with correct generics type.
 	 */
-	public ConcurrentHashMap<K, CalendarEntry> db;
+	public ConcurrentHashMap<Integer, CalendarEntry> db;
 	
 	public DateFormat datefmt;
 	public UUID useruuid;
 	public String username;
 	
-	//private File dbFile;
 	private String dbFileName;
     private File dbFile;
-    private boolean isServer;
-	/**
+    private boolean isServer = false;
+    /**
 	 * @param datefmt
 	 */
-	@SuppressWarnings("unchecked") // ha, gotta love Java! ;)
-	public CalendarDB( String filename, boolean isServer, K obj ) {
-		db = new ConcurrentHashMap<K, CalendarEntry>(50);
-		this.isServer = isServer;
+	public CalendarDB( ) {		
+	}
+	
+	public CalendarDB( String filename ) {
+		db = new ConcurrentHashMap<Integer, CalendarEntry>(50);
+		
 		// read in entries
 		parseFile(filename);
 		
@@ -79,11 +82,15 @@ public class CalendarDB {
 			// add all the values to the HashMap
 			System.out.println("\nRecreating CalendarHash");
 			CalendarEntry entry;
+			
+			try {
 			while ( (line = dbStreamIn.readLine()) != null ) {
-				entry = CalendarEntry.parseStringArray(line.split("#"));
-				addEntry(entry.uuid, entry);
-				
+				entry = CalendarEntry.parseStringArray(line.split("#"), isServer);
+				addEntry(entry);
 				System.out.println("create: " + entry);
+			}
+			} catch (IllegalArgumentException e) {
+				System.err.println("Invalid key while recreating list");
 			}
 			
 			dbStreamIn.close();
@@ -100,26 +107,45 @@ public class CalendarDB {
 			ioe.printStackTrace();
 			System.exit(2);
 		}
-		catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			System.err.println("Error trying to restore ArrayList");
-			e.printStackTrace();
-			System.exit(3);
-		}
 		
 	}
 	
-	public boolean addEntry(K key, CalendarEntry entry) {
+	/**
+	 * This method wraps adding objects to the hashmap in a generic fashion. Overwrite this 
+	 * to change hashmap key types.
+	 * @param entry add this entry to the hashmap
+	 * @throws IllegalArgumentException
+	 */
+	public void addEntry(CalendarEntry entry) throws IllegalArgumentException {
+		Integer key = entry.id;
 		if ( !db.containsKey(key))
 			db.put(key, entry);
-		return false;
+		else
+			throw new IllegalArgumentException("Key already in database");
 	}
 
+	/**
+	 * This method wraps deleting objects from the HashMap in a generic fashion. Overwrite this 
+	 * to change HashMap key types for a server class.
+	 * @param delete this entry from the hashmap
+	 * @throws IllegalArgumentException
+	 */
+	public boolean delEntry(CalendarEntry entry) {
+		return delEntry(entry.id);
+	}
+	
+	public boolean delEntry(Integer id) {
+		if (db.remove(id)!=null)
+			return true;
+		else 
+			return false;
+	}
+	
 	/**
 	*  Returns a synchronizedList containing the UUID database.
 	* @return List synchronizedList containing the UUID database
 	 */
-	public ConcurrentHashMap<K, CalendarEntry> getHashUUID ()
+	public ConcurrentHashMap<Integer, CalendarEntry> getHashUUID()
 	{
 		return db;
 	}
@@ -139,22 +165,22 @@ public class CalendarDB {
 	 * checkpoint This will checkpoint the file. Need to use thread to spin this off. 
 	 * @throws UserInfoException 
 	 */
-	synchronized public void checkpoint() throws UserInfoException
+	synchronized public void writeFile()
 	{
 		// writeout file
-		ObjectOutputStream dbStreamOut;
+		BufferedWriter dbStreamOut;
 		// dumpy hashmap into an array then write the array.
-		UserInfo[] dumparray = toArray();
+		CalendarEntry[] dumparray = toArray();
 
-		File dbFileOut;
 		try {
-			dbFileOut = (new File(dbFileName)).getAbsoluteFile();
-
-			dbStreamOut = new ObjectOutputStream( new FileOutputStream(dbFileOut.getCanonicalPath(), false) );
-			dbStreamOut.writeUnshared(dumparray);
+			dbFile.delete();
+			dbStreamOut = new BufferedWriter( new FileWriter(dbFile,false) );
+			
+			for (CalendarEntry entry : dumparray)
+				dbStreamOut.write(entry.toString()+"\n");
+			
 			dbStreamOut.close();
-			dbStreamOut = null;
-			System.out.println("Checkpointed UUID ArrayList File: " + dbFileOut);
+			System.out.println("Checkpointed UUID ArrayList File: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -165,20 +191,11 @@ public class CalendarDB {
 			System.err.println("Error in checkpointing. " + e);
 			e.printStackTrace();
 		}
-
-
-		// write over old contents with the new
-		// use thread to do the timing.
 	}
 
-
-	public boolean containsEventId(int eid)
+	public boolean contains(Integer eid)
 	{
-		for (CalendarEntry ele : db.values()) {
-			if (ele.id == eid)
-				return true;
-		}
-		return false;
+		return db.containsKey(eid);
 	}
 
 
