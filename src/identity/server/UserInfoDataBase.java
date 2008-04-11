@@ -220,6 +220,7 @@ public class UserInfoDataBase
 
 		System.exit(0);
 	}
+
 }
 
 class CheckPointer implements Runnable 
