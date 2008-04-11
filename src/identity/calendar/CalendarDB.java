@@ -12,6 +12,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
+import java.util.Formatter;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -45,6 +46,7 @@ public class CalendarDB {
 	public CalendarDB( String filename, boolean isServer ) {
 		db = new ConcurrentHashMap<Integer, CalendarEntry>(50);
 		this.isServer = isServer;
+		
 		// read in entries
 		parseFile(filename);
 		
@@ -152,8 +154,10 @@ public class CalendarDB {
 			dbFile.delete();
 			dbStreamOut = new BufferedWriter( new FileWriter(dbFile,false) );
 			
+			for (CalendarEntry entry : dumparray)
+				dbStreamOut.write(entry.toString());
+			
 			dbStreamOut.close();
-			dbStreamOut = null;
 			System.out.println("Checkpointed UUID ArrayList File: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
@@ -169,12 +173,6 @@ public class CalendarDB {
 
 		// write over old contents with the new
 		// use thread to do the timing.
-	}
-	
-	public void writeEntry(CalendarEntry entry, BufferedWriter out) {
-		String str;
-		
-		out.write();
 	}
 
 	public boolean containsEventId(int eid)

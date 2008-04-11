@@ -27,7 +27,7 @@ public class CalendarEntry implements Serializable {
 	public Date datetime;
 	public boolean isPublic;
 	public String descr;
-	public int duration;
+	public Integer duration;
 	
 	public static DateFormat df = DateFormat.getDateTimeInstance();
 	
@@ -73,5 +73,16 @@ public class CalendarEntry implements Serializable {
 		this.uuid = uuid;
 	}
 
+	public String toString() {
+		String str;
+		str = (uuid == null) ? null : uuid.toString()+"#";
+		str += id.toString() + "#";
+		str += datetime.toString() + "#";
+		str += (isPublic) ? "public#" : "private#";
+		str += descr.toString() + "#";
+		str += duration.toString() + "#";
+		
+		return str;
+	}
 	
 }
