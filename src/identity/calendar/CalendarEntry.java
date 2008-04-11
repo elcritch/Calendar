@@ -31,6 +31,15 @@ public class CalendarEntry implements Serializable {
 	
 	public static DateFormat df = DateFormat.getDateTimeInstance();
 	
+	CalendarEntry() {
+		this.uuid = null;
+		this.id = null;
+		this.datetime = null;
+		this.isPublic = false;
+		this.descr = null;
+		this.duration = null;
+	}
+	
 	/**
 	 * CalendarEntry
 	 *
@@ -47,12 +56,12 @@ public class CalendarEntry implements Serializable {
 		// need to check and make sure this is correct.
 	}
 
-	public static CalendarEntry parseStringArray( String[] p) {
+	public static CalendarEntry parseStringArray( String[] p, boolean hasUserId) {
 		int i = 0;
 		UUID uuid = null;		
 		try {
 			// optional set UUID
-			if (p.length == 6)
+			if (hasUserId)
 				uuid = UUID.fromString(p[i++]);
 			// parse the entry
 			int id = Integer.parseInt(p[i++]);
@@ -66,7 +75,6 @@ public class CalendarEntry implements Serializable {
 			return null;
 		}
 		
-		// need to check and make sure this is correct.
 	}
 
 	public void setUuid(UUID uuid) {

@@ -36,7 +36,7 @@ public class CalendarDB {
 	
 	private String dbFileName;
     private File dbFile;
-
+    private boolean isServer = false;
     /**
 	 * @param datefmt
 	 */
@@ -85,7 +85,7 @@ public class CalendarDB {
 			
 			try {
 			while ( (line = dbStreamIn.readLine()) != null ) {
-				entry = CalendarEntry.parseStringArray(line.split("#"));
+				entry = CalendarEntry.parseStringArray(line.split("#"), isServer);
 				addEntry(entry);
 				System.out.println("create: " + entry);
 			}
@@ -130,10 +130,16 @@ public class CalendarDB {
 	 * @param delete this entry from the hashmap
 	 * @throws IllegalArgumentException
 	 */
-	public void delEntry(CalendarEntry entry) {
-		db.remove(entry.id);
+	public boolean delEntry(CalendarEntry entry) {
+		return delEntry(entry.id);
 	}
-
+	
+	public boolean delEntry(Integer id) {
+		if (db.remove(id)!=null)
+			return true;
+		else 
+			return false;
+	}
 	
 	/**
 	*  Returns a synchronizedList containing the UUID database.
