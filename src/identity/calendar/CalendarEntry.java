@@ -6,6 +6,7 @@ package identity.calendar;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * @author jaremy
@@ -17,8 +18,12 @@ public class CalendarEntry implements Serializable {
 	 */
 	private static final long serialVersionUID = -2165686360188303307L;
 	
-	/* Example Entry: 17#2006/11/4 4:55pm#public#The fun begins now#90# */
-	public int id;
+	/* Example Entry: 
+	 * 17#2006/11/4 4:55pm#public#The fun begins now#90# 
+	 * 8953a618-3c1e-4bd8-a80a-0fe19f926394#17#2006/11/4 4:55pm#public#The fun begins now#90#
+	 */
+	public UUID uuid;
+	public Integer id;
 	public Date datetime;
 	public boolean isPublic;
 	public String descr;
@@ -32,31 +37,40 @@ public class CalendarEntry implements Serializable {
 	 * @param  
 	 * @return 
 	 */
-	CalendarEntry(int id, Date datetime, boolean isPublic, String descr, int duration ) {
+	CalendarEntry(UUID uuid, int id, Date datetime, boolean isPublic, String descr, int duration ) {
+		this.uuid = uuid;
 		this.id = id;
 		this.datetime = datetime;
 		this.isPublic = isPublic;
 		this.descr = descr;
 		this.duration = duration;
-		
 		// need to check and make sure this is correct.
 	}
 
 	public static CalendarEntry parseStringArray( String[] p) {
+		int i = 0;
+		UUID uuid = null;		
 		try {
+			// optional set UUID
+			if (p.length == 6)
+				uuid = UUID.fromString(p[i++]);
 			// parse the entry
-			int id = Integer.parseInt(p[0]);
-			Date datetime = df.parse(p[1]);
-			boolean isPublic = Boolean.parseBoolean(p[2]);
-			String descr = p[3];
-			int duration = Integer.parseInt(p[4]);
+			int id = Integer.parseInt(p[i++]);
+			Date datetime = df.parse(p[i++]);
+			boolean isPublic = Boolean.parseBoolean(p[i++]);
+			String descr = p[i++];
+			int duration = Integer.parseInt(p[i++]);
 			
-			return new CalendarEntry(id,datetime,isPublic,descr,duration);
+			return new CalendarEntry(uuid, id,datetime,isPublic,descr,duration);
 		} catch (Exception e) {
 			return null;
 		}
 		
 		// need to check and make sure this is correct.
+	}
+
+	public void setUuid(UUID uuid) {
+		this.uuid = uuid;
 	}
 
 	

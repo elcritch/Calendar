@@ -6,17 +6,20 @@ package identity.calendar;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
  * @author jaremy
  * Use this class to create a calendar database for both server's and clients. The type
  * should be specified
  */
-public class CalendarDB<K> {
+public class CalendarDB {
 	
 	/**
 	 * This contains a generic flat hashmap that can contain either server or client event 
@@ -26,40 +29,65 @@ public class CalendarDB<K> {
 	public ConcurrentHashMap<K, CalendarEntry> db;
 	
 	public DateFormat datefmt;
-
+	public UUID useruuid;
+	public String username;
+	
 	//private File dbFile;
 	private String dbFileName;
     private File dbFile;
+    private boolean isServer;
 	/**
 	 * @param datefmt
 	 */
 	@SuppressWarnings("unchecked") // ha, gotta love Java! ;)
-	public CalendarDB( String filename ) {
-		dbFileName = filename;
+	public CalendarDB( String filename, boolean isServer, K obj ) {
 		db = new ConcurrentHashMap<K, CalendarEntry>(50);
+		this.isServer = isServer;
+		// read in entries
+		parseFile(filename);
+		
+		
+		System.out.println("Spinning off timer?");
+		//CheckPointer checkpointer = new CheckPointer(this,60);
+		//new Thread(checkpointer).start();
+	}
+	
+	public void parseFile(String filename) {
+		dbFileName = filename;
+		String line;
+		String [] parts;
+		
 		BufferedReader dbStreamIn = null;
 		try {
 			// open file
 			dbFile = (new File(dbFileName)).getAbsoluteFile();
-			System.out.println("file: " + dbFile);
+			System.out.println(" Calendar file: " + dbFile);
 
 			// read in file and close
 			// Alright Java, is this elegant? Really, is it? Come on C does better than this!
 			dbStreamIn = new BufferedReader(new FileReader(dbFileName));
 			
-			UserInfo[] readarray = (UserInfo[]) dbStreamIn.readUnshared();
-			dbStreamIn.close();
-
-			dbStreamIn = new ObjectInputStream(new FileInputStream(dbFile));
-			readarray = (UserInfo[]) dbStreamIn.readUnshared();
-			dbStreamIn.close();
-
-			// add all the values to the HashMap
-			System.out.println("\nRecreating dbHash");
-			for (UserInfo user: readarray) {
-				dbHash.put(user.uuid, user);
-				System.out.println("create: " + user.uuid);
+			// read the first line then read all the events into the hashmap
+			line = dbStreamIn.readLine();
+			if ( (parts = line.split("#")).length == 2 ) {
+				useruuid = UUID.fromString(parts[0]); 
+				username = parts[1];
+			} else {
+				System.err.println("Incorrect file format: "+dbFile);
 			}
+			
+			// add all the values to the HashMap
+			System.out.println("\nRecreating CalendarHash");
+			CalendarEntry entry;
+			while ( (line = dbStreamIn.readLine()) != null ) {
+				entry = CalendarEntry.parseStringArray(line.split("#"));
+				addEntry(entry.uuid, entry);
+				
+				System.out.println("create: " + entry);
+			}
+			
+			dbStreamIn.close();
+
 		     
 			// TODO! use thread to spin off the timing for checkpointing.
 
@@ -79,21 +107,21 @@ public class CalendarDB<K> {
 			System.exit(3);
 		}
 		
-		System.out.println("Spinning off thread?");
-		CheckPointer checkpointer = new CheckPointer(this,60);
-		new Thread(checkpointer).start();
 	}
-	/*
-	  NOTE: might need to manually synchronize the ArrayList in order to serialize it?
-	*/
+	
+	public boolean addEntry(K key, CalendarEntry entry) {
+		if ( !db.containsKey(key))
+			db.put(key, entry);
+		return false;
+	}
 
 	/**
 	*  Returns a synchronizedList containing the UUID database.
 	* @return List synchronizedList containing the UUID database
 	 */
-	public ConcurrentHashMap<UUID, UserInfo> getHashUUID ()
+	public ConcurrentHashMap<K, CalendarEntry> getHashUUID ()
 	{
-		return dbHash;
+		return db;
 	}
 
 
@@ -101,9 +129,9 @@ public class CalendarDB<K> {
 	 * Returns an array of UserInfo[] type from ConcurrentHashMap
 	 * @return array holding the contents of the ConcurrentHashMap
 	 */
-	public UserInfo[] toArray()
+	public CalendarEntry[] toArray()
 	{
-		return dbHash.values().toArray(new UserInfo[0]);
+		return db.values().toArray(new CalendarEntry[0]);
 	}
 
 
@@ -143,33 +171,11 @@ public class CalendarDB<K> {
 		// use thread to do the timing.
 	}
 
-	public UserInfo getUUID(UUID uid)
-	{
-		return dbHash.get(uid);
-	}
 
-	public UserInfo getUserName(String uname)
+	public boolean containsEventId(int eid)
 	{
-		for (UserInfo ele : dbHash.values()) {
-			if (ele.username.equals(uname))
-				return ele;
-		}
-		return null;
-	}
-
-	public boolean containsUserName(String uname)
-	{
-		for (UserInfo ele : dbHash.values()) {
-			if (ele.username.equals(uname))
-				return true;
-		}
-		return false;
-	}
-
-	public boolean containsUUID(UUID uname)
-	{
-		for (UserInfo ele : dbHash.values()) {
-			if (ele.uuid.equals(uname))
+		for (CalendarEntry ele : db.values()) {
+			if (ele.id == eid)
 				return true;
 		}
 		return false;
@@ -178,56 +184,6 @@ public class CalendarDB<K> {
 
 	public static void main(String[] args)
 	{
-		// TODO Test this functionality now
-		UserInfoDataBase foodb = new UserInfoDataBase("defaultUserInfo.db");
-
-		try {
-			
-			UserInfo testuser0 = new UserInfo("testuser00", "mypasswd0", "No Real Name");
-			UserInfo testuser1 = new UserInfo("testuser10", "mypasswd1", "Bob Jon");
-			UserInfo testuser2 = new UserInfo("testuser30", "mypasswd2", "Welly Nilson");
-			UserInfo testuser3 = new UserInfo("testuser40", "mypasswd3", "Mark Henry");
-			UserInfo testuser2a = new UserInfo("testuser40", "mypasswd3a", "Teh Hax0R!");
-
-			System.out.println("testuser " + testuser0);
-			System.out.println("testuser1 " + testuser1);
-			System.out.println("testuser2 " + testuser2);
-			System.out.println("testuser3 " + testuser3);
-			System.out.println("foo = " + testuser0.equals(testuser1));
-			foodb.dbHash.put(testuser0.uuid, testuser0);
-			foodb.dbHash.put(testuser1.uuid, testuser1);
-			foodb.dbHash.put(testuser2.uuid, testuser2);
-			foodb.dbHash.put(testuser3.uuid, testuser3);
-
-			System.out.println("\n\nCheckpointing1");
-			foodb.checkpoint();
-
-			System.out.println("\nTesting Reading");
-			UserInfoDataBase bar = new UserInfoDataBase("test.db");
-			System.out.println("bar");
-			for ( UserInfo user: bar.toArray() ) {
-				System.out.println("bar: " + user.uuid);
-			}
-
-			System.out.println("\n\nCheckpointing2");
-			for (int i = 0; i < 100; ++i)
-				foodb.checkpoint();
-
-			System.out.println("\nTesting Reading");
-			UserInfoDataBase bar2 = new UserInfoDataBase("test.db");
-			System.out.println("bar2");
-			for ( UserInfo user: bar2.toArray() ) {
-				System.out.println("bar2: " + user.uuid);
-			}
-
-			System.out.println("Equals: " + bar2.getUserName("testuser0"));
-
-		}
-		catch (UserInfoException e) {
-			// TODO Auto-generated catch block
-			System.err.println("" + e);
-			e.printStackTrace();
-		}
 
 		System.exit(0);
 	}
