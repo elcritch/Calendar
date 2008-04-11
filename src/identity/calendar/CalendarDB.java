@@ -5,9 +5,11 @@ package identity.calendar;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.UUID;
@@ -26,7 +28,7 @@ public class CalendarDB {
 	 * types. The flat database model allows this class to be used for both client/server
 	 * applications with generality. 
 	 */
-	public ConcurrentHashMap<K, CalendarEntry> db;
+	public ConcurrentHashMap<Integer, CalendarEntry> db;
 	
 	public DateFormat datefmt;
 	public UUID useruuid;
@@ -40,8 +42,8 @@ public class CalendarDB {
 	 * @param datefmt
 	 */
 	@SuppressWarnings("unchecked") // ha, gotta love Java! ;)
-	public CalendarDB( String filename, boolean isServer, K obj ) {
-		db = new ConcurrentHashMap<K, CalendarEntry>(50);
+	public CalendarDB( String filename, boolean isServer ) {
+		db = new ConcurrentHashMap<Integer, CalendarEntry>(50);
 		this.isServer = isServer;
 		// read in entries
 		parseFile(filename);
@@ -79,11 +81,15 @@ public class CalendarDB {
 			// add all the values to the HashMap
 			System.out.println("\nRecreating CalendarHash");
 			CalendarEntry entry;
+			
+			try {
 			while ( (line = dbStreamIn.readLine()) != null ) {
 				entry = CalendarEntry.parseStringArray(line.split("#"));
-				addEntry(entry.uuid, entry);
-				
+				addEntry(entry);
 				System.out.println("create: " + entry);
+			}
+			} catch (IllegalArgumentException e) {
+				System.err.println("Invalid key while recreating list");
 			}
 			
 			dbStreamIn.close();
@@ -100,26 +106,22 @@ public class CalendarDB {
 			ioe.printStackTrace();
 			System.exit(2);
 		}
-		catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			System.err.println("Error trying to restore ArrayList");
-			e.printStackTrace();
-			System.exit(3);
-		}
 		
 	}
 	
-	public boolean addEntry(K key, CalendarEntry entry) {
+	public void addEntry(CalendarEntry entry) throws IllegalArgumentException {
+		Integer key = entry.id;
 		if ( !db.containsKey(key))
 			db.put(key, entry);
-		return false;
+		else
+			throw new IllegalArgumentException("Key already in database");
 	}
 
 	/**
 	*  Returns a synchronizedList containing the UUID database.
 	* @return List synchronizedList containing the UUID database
 	 */
-	public ConcurrentHashMap<K, CalendarEntry> getHashUUID ()
+	public ConcurrentHashMap<Integer, CalendarEntry> getHashUUID()
 	{
 		return db;
 	}
@@ -139,22 +141,20 @@ public class CalendarDB {
 	 * checkpoint This will checkpoint the file. Need to use thread to spin this off. 
 	 * @throws UserInfoException 
 	 */
-	synchronized public void checkpoint() throws UserInfoException
+	synchronized public void checkpoint()
 	{
 		// writeout file
-		ObjectOutputStream dbStreamOut;
+		BufferedWriter dbStreamOut;
 		// dumpy hashmap into an array then write the array.
-		UserInfo[] dumparray = toArray();
+		CalendarEntry[] dumparray = toArray();
 
-		File dbFileOut;
 		try {
-			dbFileOut = (new File(dbFileName)).getAbsoluteFile();
-
-			dbStreamOut = new ObjectOutputStream( new FileOutputStream(dbFileOut.getCanonicalPath(), false) );
-			dbStreamOut.writeUnshared(dumparray);
+			dbFile.delete();
+			dbStreamOut = new BufferedWriter( new FileWriter(dbFile,false) );
+			
 			dbStreamOut.close();
 			dbStreamOut = null;
-			System.out.println("Checkpointed UUID ArrayList File: " + dbFileOut);
+			System.out.println("Checkpointed UUID ArrayList File: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -170,7 +170,12 @@ public class CalendarDB {
 		// write over old contents with the new
 		// use thread to do the timing.
 	}
-
+	
+	public void writeEntry(CalendarEntry entry, BufferedWriter out) {
+		String str;
+		
+		out.write();
+	}
 
 	public boolean containsEventId(int eid)
 	{
