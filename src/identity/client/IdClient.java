@@ -6,6 +6,7 @@ import java.rmi.registry.Registry;
 import java.rmi.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Hashtable;
 import java.util.UUID;
 
 import sun.misc.BASE64Encoder;
@@ -22,7 +23,7 @@ public class IdClient
 
 	private UserInfo options, modoptions;
 	private int type;
-
+	public static Hashtable<String, String> argsHash = new Hashtable<String, String>();
 	public static void main(String[] args)
 	{
 		//System.err.println("Beginning Static");
@@ -53,7 +54,9 @@ public class IdClient
 		IdClient client = new IdClient();
 		client.setServerName(host, port);
 		client.parse_switches(args, numinputs);
-		client.perform();			
+		client.perform();
+		client.parseInput(args);
+		client.printArgsHash();
 	}
 
 	/** 
@@ -102,8 +105,8 @@ public class IdClient
 	}
 
 
-	/*
-		--create <loginname> [<real name>] [--password <password>] With this op- 
+	
+/*		--create <loginname> [<real name>] [--password <password>] With this op- 
 		tion, the client contacts the server and attempts to create the new login name. 
 		The client optionally provides the real user name along with the request. In 
 		Java, we can merely pass the user.name property as the user’s real name. Use 
@@ -122,8 +125,8 @@ public class IdClient
 		an error. 
 		--get users|uuids|all The client contacts the server and obtains either a list all 
 		login names, lits of all UUIDs or a list of user, UUID and string description all 
-		accounts (don’t show encrypted passwords in this option). 
-	*/
+		accounts (don’t show encrypted passwords in this option). */
+	
 
 	/**
 	 * exit_message
@@ -190,6 +193,11 @@ public class IdClient
 		String real = "";
 		String pass = null;
 		String newuser = null;
+		String time  =null;
+		int   seqNum =1;
+		String securityLevel =null;
+		String description =null; //max of 128 characters
+		int duration =0;
 		UUID uuid = null;
 		type = -1;
 		// –c, –l, –r, –m and –g. 
@@ -258,6 +266,51 @@ public class IdClient
 				if (!( get.equals("users") || get.equals("uuids") || get.equals("all") ))
 					exit_message("Incorrect --get request ");
 				type = 4;
+			}
+			//switch 5
+			else if (argv[init].equals("--new") || argv[init].equals("-n"))
+			{
+				init ++;
+				
+				if (argv[init].startsWith("-")) exit_message("Too many switches");
+				user = argv[init];
+				
+				
+				// get password
+				init ++;
+				if (argv[init].equals("--password") || argv[init].equals("-p") )
+				pass = argv[++init];
+				
+				// get time 
+				init ++;
+				if (argv[init].equals("-t") )
+				{
+				  init ++;
+				  for (int i = 0; i < 2 && !(argv[init].startsWith("-sl")); i++)
+					time = time + argv[init++];	
+				}
+				//security level  public /private
+				if (argv[init].equals("-sl") )
+				securityLevel = argv[++init];	
+				
+				init++;
+				//description
+				if (argv[init].equals("-des") )
+				{
+					init ++;
+					for (int i = 0; i < 2 && !(argv[init].startsWith("-du")); i++)
+							description = description + argv[init++];						
+				}
+
+				securityLevel = argv[++init];					
+				init++;
+				
+				
+				
+				//else
+					//exit_message("create switch must use --create <loginname> [<real name>] [--password <password>] ");
+				type = 0;
+				type = 5;				
 			}
 			else {
 				exit_message("Unknown switch: " + argv[init]);
@@ -362,7 +415,74 @@ public class IdClient
 		}
 	}
 	
+	private void parseInput(String[] ags)
+	{
+		int argCount  = 0;
+		//System.out.println("Args count"+ags.length);
+		while(argCount < ags.length)
+		{
+			
+			String key =null;
+			
+			if(ags[argCount].startsWith("-") ||ags[argCount].startsWith("--"))
+			{
+				key = ags[argCount];
+				//System.out.println("Key "+ags[argCount]);
+				argCount ++;
+				String value ="";
+				boolean stop =false;
+				//System.out.println("before Value "+argCount);
+				while(stop ==false && argCount < ags.length )
+				{
+				   value = value + ags[argCount];
+				   //System.out.println("Value "+value);
+
+				     argCount ++;
+	         		if(argCount <ags.length )
+					 {
+				     //System.out.println("after Value "+argCount);
+					 if(ags[argCount].startsWith("-") ||ags[argCount].startsWith("--")  )
+						stop=true;
+        			 }
+				     else
+					   break;
+				}
+				   if(!argsHash.containsKey(key))
+				   {
+					   argsHash.put(key, value);
+					   
+				   }
+				//System.out.println("after Value "+argCount);
+				
+
 	
+			}
+			else
+				break;
+					
+			
+				
+
+//				argCount ++;
+//				for(int i=0;value.length()<128 &&!ags[argCount].startsWith(" -") 
+//						&& !ags[argCount].startsWith("--"); i++)
+//		 	
+//				while((!ags[argCount].startsWith(" -") && !ags[argCount].startsWith("--")))
+//				{
+//				  value = value + ags[argCount];
+//				  System.out.println("Value "+ags[argCount]);
+//				  argCount ++;
+//				}
+
+			}
+			
+	
+		
+	}
+	private void  printArgsHash()
+	{
+		System.out.println("Arguments Hash is : \n" +argsHash.toString());
+	}
 	private String printUser(UserInfo u)
 	{
 		if (u == null)
