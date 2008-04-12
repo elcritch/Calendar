@@ -6,11 +6,14 @@ import java.rmi.registry.Registry;
 import java.rmi.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.UUID;
 
 import sun.misc.BASE64Encoder;
 
+import identity.calendar.CalendarEntry;
 import identity.server.*;
 
 public class IdClient
@@ -22,6 +25,8 @@ public class IdClient
 	private IdentityUUID userdb;
 
 	private UserInfo options, modoptions;
+	private CalendarEntry calentry;
+	
 	private int type;
 	public static Hashtable<String, String> argsHash = new Hashtable<String, String>();
 	public static void main(String[] args)
@@ -55,6 +60,7 @@ public class IdClient
 		client.setServerName(host, port);
 		client.parse_switches(args, numinputs);
 		client.perform();
+		
 		client.parseInput(args);
 		client.printArgsHash();
 	}
@@ -193,11 +199,6 @@ public class IdClient
 		String real = "";
 		String pass = null;
 		String newuser = null;
-		String time  =null;
-		int   seqNum =1;
-		String securityLevel =null;
-		String description =null; //max of 128 characters
-		int duration =0;
 		UUID uuid = null;
 		type = -1;
 		// –c, –l, –r, –m and –g. 
@@ -268,51 +269,72 @@ public class IdClient
 				type = 4;
 			}
 			//switch 5
-			else if (argv[init].equals("--new") || argv[init].equals("-n"))
+			/*new calendar entry*/
+			else if (argsHash.contains("--new") || argsHash.contains("-n"))
 			{
-				init ++;
 				
-				if (argv[init].startsWith("-")) exit_message("Too many switches");
-				user = argv[init];
-				
-				
-				// get password
-				init ++;
-				if (argv[init].equals("--password") || argv[init].equals("-p") )
-				pass = argv[++init];
-				
-				// get time 
-				init ++;
-				if (argv[init].equals("-t") )
+				if(argsHash.containsValue("cal") && argsHash.contains("-u") &&
+				  (argsHash.contains("--password") || argsHash.contains("-p")) &&
+				   argsHash.contains("-t") && argsHash.containsValue("-sl") && 
+				   argsHash.contains("-des") && argsHash.contains("-du"))
 				{
-				  init ++;
-				  for (int i = 0; i < 2 && !(argv[init].startsWith("-sl")); i++)
-					time = time + argv[init++];	
+					if(argsHash.get("-des").length() >128)
+					  System.out.println("Description too long ..trucating to 128 bytes");
+					//truncate cod comes here
+					//get the unique id from local db
+					int id =0;
+					DateFormat df = DateFormat.getDateTimeInstance();
+					Date datetime = df.parse(argsHash.get("-t"));
+					boolean isPublic =false;
+					if(argsHash.get("-sl").equalsIgnoreCase("public"))
+						isPublic =true;
+					int duration = Integer.parseInt(argsHash.get("-du"));
+					
+					calentry = new CalendarEntry (null, id, datetime, isPublic, argsHash.get("-des"),duration);
+							
+					type = 5;	
 				}
-				//security level  public /private
-				if (argv[init].equals("-sl") )
-				securityLevel = argv[++init];	
+				else
+				   exit_message("Incorrect number of parameters to parse.");
 				
-				init++;
-				//description
-				if (argv[init].equals("-des") )
-				{
-					init ++;
-					for (int i = 0; i < 2 && !(argv[init].startsWith("-du")); i++)
-							description = description + argv[init++];						
-				}
-
-				securityLevel = argv[++init];					
-				init++;
-				
-				
-				
-				//else
-					//exit_message("create switch must use --create <loginname> [<real name>] [--password <password>] ");
-				type = 0;
-				type = 5;				
+										
 			}
-			else {
+			//switch 6
+			/*delelte calendar entry*/
+			else if(argsHash.contains("--del") || argsHash.contains("-d"))
+			{
+				if(argsHash.containsValue("cal") && argsHash.contains("-u") &&
+				  (argsHash.contains("--password") || argsHash.contains("-p")) &&
+						   argsHash.contains("-s"))
+				{
+					type = 6;	
+				}
+				else
+				   exit_message("Incorrect number of parameters to parse.");
+					
+			}
+			//switch 7
+			else if(argsHash.contains("--show") || argsHash.contains("-s"))
+			{
+					if(argsHash.contains("-rusr") && argsHash.contains("-u") &&
+					  (argsHash.contains("--password") || argsHash.contains("-p")) &&
+					   argsHash.contains("-l") && argsHash.containsValue("cal"))
+				    {
+						/*Display remote user's calendar entries*/
+						type = 7;	
+					}
+					else if(argsHash.contains("-u") && argsHash.containsValue("cal") &&
+						   (argsHash.contains("--password") || argsHash.contains("-p")))
+					{
+						/*Display user's local calendar entries*/
+						type = 8;	
+					}
+					else
+					 exit_message("Incorrect number of parameters to parse.");
+				
+			}
+			else
+			{
 				exit_message("Unknown switch: " + argv[init]);
 			}
 		}
@@ -336,6 +358,8 @@ public class IdClient
 		// now create option and modoption
 		options = new UserInfo(uuid, user, pass, real, null, null);
 		modoptions = new UserInfo(uuid, newuser, pass, real, null, null);
+		int id, Date datetime, boolean isPublic, String descr, int duration
+		//need to get the unique id here
 		//public UserInfo(final UUID uuid, final String username, final String md5passwd,
 		//			final String realname, final String ipaddr, final Date lastdate)
 
@@ -398,6 +422,13 @@ public class IdClient
 						System.out.println("dump: " + dump[i]);
 				}
 				break;
+			case 5:
+				/*Create calendar entry*/
+				String userName =  argsHash.get("-u");
+				String passwd  = client.
+				UserInfo auth = new UserInfo(argsH, String passwd, String realname));
+				userdb.addCalendarEntry(calEntry, auth)
+				 boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth)
 			default:
 				System.out.println("Invalid command.");
 			}
