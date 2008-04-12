@@ -49,14 +49,14 @@ public class CalendarDB
 	public CalendarDB( )
 	{}
 
-	public CalendarDB( String filename, UUID uid, String uname )
+	public CalendarDB( String uname )
 	{
 		db = new ConcurrentHashMap<Integer, CalendarEntry>(50);
-		useruuid = uid;
 		username = uname;
 		// read in entries
+		String filename = "calendar" + "_"+uname+".cal";
+		
 		parseFile(filename);
-
 
 		//CheckPointer checkpointer = new CheckPointer(this,60);
 		//new Thread(checkpointer).start();
@@ -85,18 +85,6 @@ public class CalendarDB
 			CalendarEntry entry;
 
 			try {
-				// read the first line then read all the events into the hashmap
-				if (!isServer()) {
-					line = dbStreamIn.readLine();
-					if ( (parts = line.split("#")).length == 2 ) {
-						useruuid = UUID.fromString(parts[0]);
-						username = parts[1];
-					}
-					else {
-						System.err.println("Check that the file is correct type, server/client.");
-						throw new IOException("Cannot open file for I/O. Incorrect format.");
-					}
-				}
 				
 				while ( (line = dbStreamIn.readLine()) != null ) {
 					parts = line.split("#");
@@ -270,7 +258,7 @@ public class CalendarDB
 			System.out.println("bar i:"+i+" :"+bar[i]);
 		}
 		
-		CalendarDB test = new CalendarDB("emptycalendar.cal",UUID.randomUUID(),"daffy");
+		CalendarDB test = new CalendarDB("daffy");
 		System.out.println("created new CalendarDB");
 		for ( CalendarEntry entry : bar ) {
 			test.addEntry(entry);

@@ -26,6 +26,7 @@ public class CalendarDBServer extends CalendarDB {
 		
 		db = new ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, CalendarEntry>>(50);
 		
+		filename = "CALENDAR";
 		// read in entries
 		parseFile(filename);
 		
