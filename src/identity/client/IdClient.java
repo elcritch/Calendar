@@ -477,6 +477,7 @@ public class IdClient
 					if(retval ==true)
 					{
 					//Add the entry to the local database
+					System.out.println("Succesfully created entry");
 					 localCalDb.addEntry(localEntry);
 					}
 					else
@@ -498,6 +499,7 @@ public class IdClient
 				if(retval ==true)
 				{
 					//Delete the entry to the local database
+					System.out.println("Succesfully deleted entry");
 					localCalDb.delEntry(localentry);
 				}
 				else
@@ -522,6 +524,8 @@ public class IdClient
 				if(entries !=null)
 				{				
 					System.out.println("Display: ");
+					if(entries.length==0)
+						System.out.println("No Calendar Entries found");
 					for (int i = 0; i < entries.length; ++i ) 
 						System.out.println(entries[i]);
 				}
