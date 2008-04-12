@@ -302,6 +302,55 @@ public class IdentityServer implements IdentityUUID
 	}
 	
 	/**
+	 * returns server side full copy of user info base on either UUID or username.
+	 * @param user contains either name or UUID to lookup user with.
+	 * @return
+	 * @throws UserInfoException 
+	 */
+	private UserInfo getServerUserInfo(UserInfo user) throws UserInfoException {
+		if (user == null)
+			return null;
+		UserInfo serveruser;			
+		
+		if (user.username != null)
+			serveruser = userDBwrapper.getUserName(user.username);
+		else if (user.uuid != null)
+			serveruser = userDBwrapper.getUUID(user.uuid);
+		else 
+			serveruser = null;
+		
+		if (user.username != null && user.uuid != null &&
+				!user.username.equals(serveruser.username) && 
+				!user.uuid.equals(serveruser.uuid) )
+			throw new UserInfoException("No User Authentication given!",2);
+
+		return serveruser;
+	}
+	
+	/**
+	 * Tries to authenticate a user with either UUID or username. 
+	 * @param auth contains information from client to use for authenticating.
+	 * @return a full copy of the UserInfo or null on error.
+	 * @throws UserInfoException in case both uuid and name are given and don't match
+	 */
+	private UserInfo authenitcate(UserInfo auth) throws UserInfoException {
+		UserInfo serverauth = null;
+		if (auth == null)
+			throw new UserInfoException("No User Authentication given!",2);
+		
+		// get user
+		serverauth = getServerUserInfo(auth);
+		
+		if ( serverauth == null )
+			throw new UserInfoException("No UserInfo found!",2);
+		
+		if (!serverauth.md5passwd.equals( auth.md5passwd))
+			throw new UserInfoException("Incorrect Password! (DEBUG) "+auth.md5passwd+" orig: "+auth.md5passwd,0);
+		else
+			return serverauth;
+	}
+	
+	/**
 	* Returns the current clients hosts.
 	* @return the current clients ip address
 	*/
@@ -321,23 +370,13 @@ public class IdentityServer implements IdentityUUID
 	public boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth)
 			throws UserInfoException, RemoteException 
 	{
-		boolean retval =true;
-		// TODO Auto-generated method stub
-		UserInfo orig = userDBwrapper.getUserName(auth.username);
+		boolean retval = true;
+		UserInfo orig = authenitcate(auth);
+		if ( orig == null)
+			return false;
 		
-		if (orig == null)
-		{
-			retval =false;
-			throw new UserInfoException("Cannot find given Username",2);
-			
-		}
-		if (!auth.md5passwd.equals( orig.md5passwd))
-		{
-			retval =false;
-			throw new UserInfoException("Incorrect Password! (DEBUG) "+ auth.md5passwd+" orig: "+orig.md5passwd,0);
-			
-		}
-		
+		if (calEntry.uuid == null)
+			calEntry.setUuid(orig.uuid);
 		
 		caldb.addEntry(calEntry);
 		return retval;
@@ -348,20 +387,15 @@ public class IdentityServer implements IdentityUUID
 		// TODO Auto-generated method stub
 		boolean retval =true;
 		// TODO Auto-generated method stub
-		UserInfo orig = userDBwrapper.getUserName(auth.username);
+		UserInfo orig = authenitcate(auth);
 		
 		if (orig == null)
 		{
-			retval =false;
+			retval = false;
 			throw new UserInfoException("Cannot find given Username",2);
 			
 		}
-		if (!auth.md5passwd.equals( orig.md5passwd))
-		{
-			retval =false;
-			throw new UserInfoException("Incorrect Password! (DEBUG) "+ auth.md5passwd+" orig: "+orig.md5passwd,0);
-			
-		}		
+	
 		caldb.delEntry(calEntry);
 		return retval;
 	}
@@ -376,15 +410,13 @@ public class IdentityServer implements IdentityUUID
 		
 		if (orig == null)
 		{
-			retval =false;
+			retval = false;
 			throw new UserInfoException("Cannot find given Username",2);
-			
 		}
 		if (!auth.md5passwd.equals( orig.md5passwd))
 		{
 			retval =false;
 			throw new UserInfoException("Incorrect Password! (DEBUG) "+ auth.md5passwd+" orig: "+orig.md5passwd,0);
-			
 		}		
 		CalendarEntry[] tmp = caldb.toArray(); 
 		return tmp;
