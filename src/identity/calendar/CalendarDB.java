@@ -187,14 +187,6 @@ public class CalendarDB
 		return db.get(key);
 	}
 	
-	/**
-	*  Returns a synchronizedList containing the UUID database.
-	* @return List synchronizedList containing the UUID database
-	 */
-	public ConcurrentHashMap<Integer, CalendarEntry> getHashUUID()
-	{
-		return db;
-	}
 
 
 	/**

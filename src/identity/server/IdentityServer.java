@@ -12,6 +12,7 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -409,21 +410,23 @@ public class IdentityServer implements IdentityUUID
 		return retval;
 	}
 
-	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo, UserInfo auth, boolean mode) 
+	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo, UserInfo auth, boolean modePublic) 
 		throws UserInfoException, RemoteException {
-		// TODO Auto-generated method stub
-		boolean retval = true;
-		// TODO Auto-generated method stub
 		UserInfo orig = authenitcate(auth);
 		
 		if (orig == null)
-		{
-			retval = false;
 			throw new UserInfoException("Cannot find given Username",2);
+			
+		ArrayList<CalendarEntry> tmp = new ArrayList<CalendarEntry>(200);
+		ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(orig.uuid);
+		for ( CalendarEntry entry : userhm.values() ) {
+			// check for modePublic and event is public
+			// or modePublic is not public (is false) then add
+			if ( (modePublic && entry.status.equals("public")) || !modePublic )
+				tmp.add(entry);
 		}
-		
-		CalendarEntry[] tmp = caldb.getHashUUID().values().toArray(new CalendarEntry[0]); 
-		return tmp;
+			
+		return tmp.toArray(new CalendarEntry[0]);
 	
 	}
 

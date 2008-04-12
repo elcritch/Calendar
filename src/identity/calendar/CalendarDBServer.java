@@ -116,6 +116,15 @@ public class CalendarDBServer extends CalendarDB {
 		return db.get(uid).get(key);
 	}
 	
+	/**
+	*  Returns a synchronizedList containing the UUID database.
+	* @return List synchronizedList containing the UUID database
+	 */
+	public ConcurrentHashMap<Integer, CalendarEntry> getHashUUID(UUID uid)
+	{
+		return db.get(uid);
+	}
+
 	
 	@Override
 	public CalendarEntry[] toArray()
