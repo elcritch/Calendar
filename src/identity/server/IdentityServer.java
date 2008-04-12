@@ -95,7 +95,7 @@ public class IdentityServer implements IdentityUUID
 			registryPort = Integer.parseInt(args[0]);
 		}
 		
-		String certName = "../resources/Server_Keystore";
+		String certName = "./resources/Server_Keystore";
 		File cert = new File(certName);
 		System.out.println("Can read cert file? "+cert.canRead());
 		
