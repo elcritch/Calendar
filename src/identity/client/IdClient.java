@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import sun.misc.BASE64Encoder;
 
+import identity.calendar.CalendarDB;
 import identity.calendar.CalendarEntry;
 import identity.server.*;
 
@@ -25,7 +26,8 @@ public class IdClient
 	private IdentityUUID userdb;
 
 	private UserInfo options, modoptions;
-	private CalendarEntry calentry;
+	public CalendarEntry calentry;
+	public CalendarDB localCalDb ;
 	
 	private int type;
 	public static Hashtable<String, String> argsHash = new Hashtable<String, String>();
@@ -57,12 +59,14 @@ public class IdClient
 			numinputs = 2;
 		}
 		IdClient client = new IdClient();
+		client.localCalDb= new CalendarDB("calendar");
+		client.parseInput(args);
+		client.printArgsHash();
 		client.setServerName(host, port);
 		client.parse_switches(args, numinputs);
 		client.perform();
 		
-		client.parseInput(args);
-		client.printArgsHash();
+
 	}
 
 	/** 
@@ -270,13 +274,13 @@ public class IdClient
 			}
 			//switch 5
 			/*new calendar entry*/
-			else if (argsHash.contains("--new") || argsHash.contains("-n"))
+			else if (argsHash.containsKey("--new") || argsHash.containsKey("-n"))
 			{
 				
-				if(argsHash.containsValue("cal") && argsHash.contains("-u") &&
-				  (argsHash.contains("--password") || argsHash.contains("-p")) &&
-				   argsHash.contains("-t") && argsHash.containsValue("-sl") && 
-				   argsHash.contains("-des") && argsHash.contains("-du"))
+				if(argsHash.containsValue("cal") && argsHash.containsKey("-u") &&
+				  (argsHash.containsKey("--password") || argsHash.containsKey("-p")) &&
+				   argsHash.containsKey("-t") && argsHash.containsKey("-sl") && 
+				   argsHash.containsKey("-des") && argsHash.containsKey("-du"))
 				{
 					if(argsHash.get("-des").length() >128)
 					  System.out.println("Description too long ..trucating to 128 bytes");
@@ -290,23 +294,39 @@ public class IdClient
 						isPublic =true;
 					int duration = Integer.parseInt(argsHash.get("-du"));
 					
-					calentry = new CalendarEntry (null, id, datetime, isPublic, argsHash.get("-des"),duration);
+					user = argsHash.get("-u");
+					if(argsHash.containsKey("--password") )
+						pass =argsHash.get("--password");
+					else
+						pass =argsHash.get("-p");
+					
+					calentry = new CalendarEntry(null, id, datetime, isPublic, argsHash.get("-des"),duration);
 							
 					type = 5;	
 				}
 				else
-				   exit_message("Incorrect number of parameters to parse.");
+				   exit_message("Incorrect number of parameters to create calendar entry");
 				
 										
 			}
 			//switch 6
 			/*delelte calendar entry*/
-			else if(argsHash.contains("--del") || argsHash.contains("-d"))
+			else if(argsHash.containsKey("--del") || argsHash.containsKey("-d"))
 			{
-				if(argsHash.containsValue("cal") && argsHash.contains("-u") &&
-				  (argsHash.contains("--password") || argsHash.contains("-p")) &&
-						   argsHash.contains("-s"))
+				if(argsHash.containsValue("cal") && argsHash.containsKey("-u") &&
+				  (argsHash.containsKey("--password") || argsHash.containsKey("-p")) &&
+						   argsHash.containsKey("-s"))
 				{
+					
+					user = argsHash.get("-u");
+					if(argsHash.containsKey("--password") )
+						pass =argsHash.get("--password");
+					else
+						pass =argsHash.get("-p");
+					
+					int id =Integer.parseInt(argsHash.get("-s"));
+					calentry = new CalendarEntry(null, id,null, false, null, 0);
+					
 					type = 6;	
 				}
 				else
@@ -314,19 +334,34 @@ public class IdClient
 					
 			}
 			//switch 7
-			else if(argsHash.contains("--show") || argsHash.contains("-s"))
+			else if(argsHash.containsKey("--show") || argsHash.containsKey("-s"))
 			{
-					if(argsHash.contains("-rusr") && argsHash.contains("-u") &&
-					  (argsHash.contains("--password") || argsHash.contains("-p")) &&
-					   argsHash.contains("-l") && argsHash.containsValue("cal"))
+					if(argsHash.containsKey("-rusr") && argsHash.containsKey("-u") &&
+					  (argsHash.containsKey("--password") || argsHash.containsKey("-p")) &&
+					   argsHash.containsKey("-l") && argsHash.containsValue("cal"))
 				    {
 						/*Display remote user's calendar entries*/
+						user = argsHash.get("-u");
+						if(argsHash.containsKey("--password") )
+							pass =argsHash.get("--password");
+						else
+							pass =argsHash.get("-p");
+						
+						newuser = argsHash.get("-rusr");
+			    
+						
 						type = 7;	
 					}
-					else if(argsHash.contains("-u") && argsHash.containsValue("cal") &&
-						   (argsHash.contains("--password") || argsHash.contains("-p")))
+					else if(argsHash.containsKey("-u") && argsHash.containsValue("cal") &&
+						   (argsHash.containsKey("--password") || argsHash.containsKey("-p")))
 					{
 						/*Display user's local calendar entries*/
+						user = argsHash.get("-u");
+						if(argsHash.containsKey("--password") )
+							pass =argsHash.get("--password");
+						else
+							pass =argsHash.get("-p");	
+						
 						type = 8;	
 					}
 					else
@@ -358,7 +393,7 @@ public class IdClient
 		// now create option and modoption
 		options = new UserInfo(uuid, user, pass, real, null, null);
 		modoptions = new UserInfo(uuid, newuser, pass, real, null, null);
-		int id, Date datetime, boolean isPublic, String descr, int duration
+		
 		//need to get the unique id here
 		//public UserInfo(final UUID uuid, final String username, final String md5passwd,
 		//			final String realname, final String ipaddr, final Date lastdate)
@@ -372,11 +407,12 @@ public class IdClient
 	{
 		// perform command line actions
 		UserInfo result = null;
-
+		boolean retval =false;
 		System.out.println("Running Command Line " + type);
 		//System.out.println("options: " + options + "\n");
 
 		try {
+			
 			switch (type) {
 			case 0:
 				UUID uniqueid = userdb.getUniqueUUID();
@@ -424,11 +460,53 @@ public class IdClient
 				break;
 			case 5:
 				/*Create calendar entry*/
-				String userName =  argsHash.get("-u");
-				String passwd  = client.
-				UserInfo auth = new UserInfo(argsH, String passwd, String realname));
-				userdb.addCalendarEntry(calEntry, auth)
-				 boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth)
+				retval = userdb.addCalendarEntry(calentry, options);
+				if(retval ==true)
+				{
+					//Add the entry to the local database
+					localCalDb.addEntry(calentry);
+				}
+				else
+					System.out.println("Adding Calendar entry failed");
+			case 6:
+				/**/
+				retval =userdb.deleteCalendarEntry(calentry, options);
+				if(retval ==true)
+				{
+					//Delete the entry to the local database
+					localCalDb.delEntry(calentry);
+				}
+				else
+					System.out.println("Deleting Calendar entry failed");				
+				break;
+			case 7:
+				/*Dispaly other user's calendar entry*/
+				boolean mode =false;
+			    if(argsHash.get("-l").equalsIgnoreCase("all"))
+			    	 mode =true;
+			    
+				CalendarEntry[] entries = (CalendarEntry[]) userdb.displayCalendarEntries(modoptions, options, mode);
+				if(entries !=null)
+				{				
+					System.out.println("Display: ");
+					for (int i = 0; i < entries.length; ++i ) 
+						System.out.println(entries[i]);
+				}
+				else
+					System.out.println("UserName does not exists");
+							    
+				break;
+			case 8:
+				/*Display personal calendar entry*/
+				CalendarEntry[] localEntries = (CalendarEntry[])localCalDb.toArray();
+				if(localEntries !=null)
+				{				
+					System.out.println("Display: ");
+					for (int i = 0; i < localEntries.length; ++i ) 
+						System.out.println(localEntries[i]);
+				}			
+			
+				break;
 			default:
 				System.out.println("Invalid command.");
 			}
@@ -489,23 +567,11 @@ public class IdClient
 	
 			}
 			else
-				break;
-					
+				argCount ++;
 			
 				
 
-//				argCount ++;
-//				for(int i=0;value.length()<128 &&!ags[argCount].startsWith(" -") 
-//						&& !ags[argCount].startsWith("--"); i++)
-//		 	
-//				while((!ags[argCount].startsWith(" -") && !ags[argCount].startsWith("--")))
-//				{
-//				  value = value + ags[argCount];
-//				  System.out.println("Value "+ags[argCount]);
-//				  argCount ++;
-//				}
-
-			}
+		}
 			
 	
 		
