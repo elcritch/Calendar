@@ -79,7 +79,9 @@ public class IdClient
 		client.parseInput(args);
 		
 		if (argsHash.containsValue("cal")) {
+			System.out.println("I have the cal value");
 			client.localCalDb = new CalendarDB(argsHash.get("-u"));
+			System.out.println("user name from cal is "+argsHash.get("-u"));
 		}
 		
 		client.printArgsHash();
