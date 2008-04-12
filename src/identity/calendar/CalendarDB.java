@@ -215,9 +215,9 @@ for (CalendarEntry entry : dumparray)
 		//classpath /Users/jaremy/proj/ds/jaremy-vamsi/bin/
 		String foodate = "4/11/2006 4:55pm";
 
-		Date datetime = CalendarEntry.geDF().parse(foodate);
+		Date datetime = CalendarEntry.getDF().parse(foodate);
 		System.out.println("datetime: " + datetime);
-		System.out.println("foo = "+CalendarEntry.geDF().format(datetime) );
+		System.out.println("foo = " + CalendarEntry.getDF().format(datetime) );
 		// CalendarEntry bar = CalendarEntry(UUID uuid, int id, Date datetime, String status, String descr, int duration );
 
 
@@ -227,5 +227,7 @@ for (CalendarEntry entry : dumparray)
 
 
 }
+
+
 
 

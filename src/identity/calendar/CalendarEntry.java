@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package identity.calendar;
 
@@ -14,13 +14,14 @@ import java.util.UUID;
  * @author jaremy
  *
  */
-public class CalendarEntry implements Serializable {
+public class CalendarEntry implements Serializable
+{
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -2165686360188303307L;
-	
-	/* Example Entry: 
+
+	/* Example Entry:
 	 * 17#2006/11/4 4:55pm#public#The fun begins now#90# 
 	 * 8953a618-3c1e-4bd8-a80a-0fe19f926394#17#2006/11/4 4:55pm#public#The fun begins now#90#
 	 */
@@ -30,22 +31,24 @@ public class CalendarEntry implements Serializable {
 	public String status;
 	public String descr;
 	public Integer duration;
-	
-	
-	private static String df = "yyyy/MM/dd h:mma";
+
+	public static final String df = "MM/d/yyyy h:mma";
 	private static SimpleDateFormat formatter = null;
-	
-	synchronized public static DateFormat geDF() {
-	   SimpleDateFormat formatter = new SimpleDateFormat(df);
-	   return formatter;
+
+	synchronized public static DateFormat getDF()
+	{
+		SimpleDateFormat formatter = new SimpleDateFormat(df);
+		return formatter;
 	}
-	synchronized public static Date dateFromString(String str) throws ParseException {
-	   if (formatter == null)
-		   formatter = new SimpleDateFormat(df);
-	   return formatter.parse(str);
+	synchronized public static Date dateFromString(String str) throws ParseException
+	{
+		if (formatter == null)
+			formatter = new SimpleDateFormat(df);
+		return formatter.parse(str);
 	}
-	
-	public CalendarEntry() {
+
+	public CalendarEntry()
+	{
 		this.uuid = null;
 		this.id = null;
 		this.datetime = null;
@@ -53,14 +56,15 @@ public class CalendarEntry implements Serializable {
 		this.descr = null;
 		this.duration = null;
 	}
-	
+
 	/**
 	 * CalendarEntry
 	 *
-	 * @param  
+	 * @param 
 	 * @return 
 	 */
-	public CalendarEntry(UUID uuid, int id, Date datetime, String status, String descr, int duration ) {
+	public CalendarEntry(UUID uuid, int id, Date datetime, String status, String descr, int duration )
+	{
 		this.uuid = uuid;
 		this.id = id;
 		this.datetime = datetime;
@@ -70,46 +74,52 @@ public class CalendarEntry implements Serializable {
 		// need to check and make sure this is correct.
 	}
 
-	public static CalendarEntry parseStringArray( String[] p, boolean hasUserId) {
+	public static CalendarEntry parseStringArray( String[] p, boolean hasUserId)
+	{
 		int i = 0;
-		UUID uuid = null;		
+		UUID uuid = null;
 		try {
 			// optional set UUID
 			if (hasUserId)
 				uuid = UUID.fromString(p[i++]);
 			// parse the entry
 			int id = Integer.parseInt(p[i++]);
-			Date datetime = getDateFromString(p[i++]);
+			Date datetime = dateFromString(p[i++]);
 			String status = p[i++];
 			String descr = p[i++];
 			int duration = Integer.parseInt(p[i++]);
-			
-			return new CalendarEntry(uuid, id,datetime,status,descr,duration);
-		} catch (Exception e) {
+
+			return new CalendarEntry(uuid, id, datetime, status, descr, duration);
+		}
+		catch (Exception e) {
 			return null;
 		}
-		
+
 	}
 
-	public void setUuid(UUID uuid) {
+	public void setUuid(UUID uuid)
+	{
 		this.uuid = uuid;
 	}
-	
-	public void privatizeDescr() {
+
+	public void privatizeDescr()
+	{
 		if (status.toLowerCase().equals("private"))
 			descr = "";
 	}
 
-	public String toString() {
+	public String toString()
+	{
 		String str;
-		str = (uuid == null) ? null : uuid.toString()+"#";
+		str = (uuid == null) ? null : uuid.toString() + "#";
 		str += id.toString() + "#";
 		str += datetime.toString() + "#";
-		str += status+"#";
+		str += status + "#";
 		str += descr.toString() + "#";
 		str += duration.toString() + "#";
-		
+
 		return str;
 	}
-	
+
 }
+
