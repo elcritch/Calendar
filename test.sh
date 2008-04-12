@@ -2,9 +2,6 @@
 # Zsh is cooler!
 
 echo $PWD
-if [[ ${PWD:t} != "IdentityUUID" ]]; then
-	exit
-fi
 
 #echo "build current classes"
 #ant build
