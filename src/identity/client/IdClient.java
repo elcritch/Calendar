@@ -65,8 +65,9 @@ public class IdClient
 		IdClient client = new IdClient();
 		client.parseInput(args);
 		//client.printArgsHash();
-		client.localCalDb= new CalendarDB("calendar");
+		
 		client.parseInput(args);
+		client.localCalDb= new CalendarDB("calendar",null,null);
 		client.printArgsHash();
 		client.setServerName(host, port);
 		client.parse_switches(args, numinputs);
