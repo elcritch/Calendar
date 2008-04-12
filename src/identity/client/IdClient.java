@@ -88,7 +88,7 @@ public class IdClient
 		client.setServerName(host, port);
 		client.parse_switches(args, numinputs);
 		client.perform();
-		
+		client.localCalDb.writeFile();
 
 	}
 
