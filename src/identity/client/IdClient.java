@@ -7,6 +7,7 @@ import java.rmi.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -292,11 +293,10 @@ public class IdClient
 					//truncate cod comes here
 					
 					int id =getNextSeqNum();
-					DateFormat df = DateFormat.getDateTimeInstance();
-					Date datetime = df.parse(argsHash.get("-t"));
-					boolean isPublic =false;
-					if(argsHash.get("-sl").equalsIgnoreCase("public"))
-						isPublic =true;
+//					DateFormat df = CalendarEntry.getDF();
+//					SimpleDateFormat formatter=  (SimpleDateFormat) df;
+					Date datetime =CalendarEntry.getDF().parse(argsHash.get("-t"));
+					String status =argsHash.get("-sl");
 					int duration = Integer.parseInt(argsHash.get("-du"));
 					
 					user = argsHash.get("-u");
@@ -305,7 +305,7 @@ public class IdClient
 					else
 						pass =argsHash.get("-p");
 					
-					calentry = new CalendarEntry(null, id, datetime, isPublic, argsHash.get("-des"),duration);
+					calentry = new CalendarEntry(null, id, datetime, status, argsHash.get("-des"),duration);
 							
 					type = 5;	
 				}
@@ -330,7 +330,7 @@ public class IdClient
 						pass =argsHash.get("-p");
 					
 					int id =Integer.parseInt(argsHash.get("-s"));
-					calentry = new CalendarEntry(null, id,null, false, null, 0);
+					calentry = new CalendarEntry(null, id,null, null, null, 0);
 					
 					type = 6;	
 				}
@@ -465,21 +465,31 @@ public class IdClient
 				break;
 			case 5:
 				/*Create calendar entry*/
+				result =userdb.lookupUUID(options.username);
+				options =options.setMd5passwd(password(options.md5passwd,result.uuid));
+				CalendarEntry localEntry =calentry;
+				calentry.privatizeDescr();
 				retval = userdb.addCalendarEntry(calentry, options);
 				if(retval ==true)
 				{
 					//Add the entry to the local database
-					localCalDb.addEntry(calentry);
+					
+					localCalDb.addEntry(localEntry);
 				}
 				else
 					System.out.println("Adding Calendar entry failed");
+				break;
 			case 6:
 				/**/
+				result =userdb.lookupUUID(options.username);
+				options =options.setMd5passwd(password(options.md5passwd,result.uuid));
+				CalendarEntry localentry =calentry;
+				calentry.privatizeDescr();			
 				retval =userdb.deleteCalendarEntry(calentry, options);
 				if(retval ==true)
 				{
 					//Delete the entry to the local database
-					localCalDb.delEntry(calentry);
+					localCalDb.delEntry(localentry);
 				}
 				else
 					System.out.println("Deleting Calendar entry failed");				
@@ -487,10 +497,13 @@ public class IdClient
 			case 7:
 				/*Dispaly other user's calendar entry*/
 				boolean mode =false;
-			    if(argsHash.get("-l").equalsIgnoreCase("all"))
+				result =userdb.lookupUUID(options.username);
+				options =options.setMd5passwd(password(options.md5passwd,result.uuid));				
+			   
+				if(argsHash.get("-l").equalsIgnoreCase("all"))
 			    	 mode =true;
-			    
-				CalendarEntry[] entries = (CalendarEntry[]) userdb.displayCalendarEntries(modoptions, options, mode);
+				
+			    CalendarEntry[] entries = (CalendarEntry[]) userdb.displayCalendarEntries(modoptions, options, mode);
 				if(entries !=null)
 				{				
 					System.out.println("Display: ");
@@ -545,9 +558,13 @@ public class IdClient
 				argCount ++;
 				String value ="";
 				boolean stop =false;
+				int iloop=0;
 				//System.out.println("before Value "+argCount);
 				while(stop ==false && argCount < ags.length )
-				{
+				{ iloop ++;
+				if(iloop>1)
+					 value = value +" "+ags[argCount];
+				else
 				   value = value + ags[argCount];
 				   //System.out.println("Value "+value);
 
