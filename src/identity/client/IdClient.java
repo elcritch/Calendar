@@ -469,6 +469,7 @@ public class IdClient
 				result =userdb.lookupUUID(options.username);
 				if(result!=null)
 				{
+					System.out.println("Received uuid "+result.uuid);
 					options =options.setMd5passwd(password(options.md5passwd,result.uuid));
 					CalendarEntry localEntry =calentry;
 					calentry.privatizeDescr();
@@ -481,12 +482,15 @@ public class IdClient
 					else
 						System.out.println("Adding Calendar entry failed");
 				}
+				else
+				System.out.println("No uuid ");
 					break;
 			case 6:
 				/**/
 				result =userdb.lookupUUID(options.username);
 				if(result!=null)
 				{
+					System.out.println("Received uuid "+result.uuid);
 				options =options.setMd5passwd(password(options.md5passwd,result.uuid));
 				CalendarEntry localentry =calentry;
 				calentry.privatizeDescr();			
@@ -499,6 +503,8 @@ public class IdClient
 				else
 					System.out.println("Deleting Calendar entry failed");
 				}
+				else
+					System.out.println("No uuid ");
 				break;
 			case 7:
 				/*Dispaly other user's calendar entry*/
@@ -506,6 +512,7 @@ public class IdClient
 				result =userdb.lookupUUID(options.username);
 				if(result!=null)
 				{
+					System.out.println("Received uuid "+result.uuid);
 				options =options.setMd5passwd(password(options.md5passwd,result.uuid));				
 			   
 				if(argsHash.get("-l").equalsIgnoreCase("all"))
@@ -520,7 +527,9 @@ public class IdClient
 				}
 				else
 					System.out.println("UserName does not exists");
-				}			    
+				}
+				else
+					System.out.println("No uuid");
 				break;
 			case 8:
 				/*Display personal calendar entry*/
@@ -531,7 +540,8 @@ public class IdClient
 					for (int i = 0; i < localEntries.length; ++i ) 
 						System.out.println(localEntries[i]);
 				}			
-			
+				else
+					System.out.println("No local entries");		
 				break;
 			default:
 				System.out.println("Invalid command.");
