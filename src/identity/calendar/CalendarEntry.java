@@ -46,7 +46,7 @@ public class CalendarEntry implements Serializable {
 	 * @param  
 	 * @return 
 	 */
-	CalendarEntry(UUID uuid, int id, Date datetime, boolean isPublic, String descr, int duration ) {
+	public CalendarEntry(UUID uuid, int id, Date datetime, boolean isPublic, String descr, int duration ) {
 		this.uuid = uuid;
 		this.id = id;
 		this.datetime = datetime;
