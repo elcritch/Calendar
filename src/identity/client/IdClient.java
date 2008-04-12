@@ -558,6 +558,7 @@ public class IdClient
 			System.err.println("Null Exception: " + e);
 			e.printStackTrace();			
 		}
+		System.exit(0);
 	}
 	
 	private void parseInput(String[] ags)
