@@ -404,7 +404,7 @@ public class IdentityServer implements IdentityUUID
 			UserInfo auth, boolean mode) throws UserInfoException,
 			RemoteException {
 		// TODO Auto-generated method stub
-		boolean retval =true;
+		boolean retval = true;
 		// TODO Auto-generated method stub
 		UserInfo orig = userDBwrapper.getUserName(auth.username);
 		
@@ -417,7 +417,8 @@ public class IdentityServer implements IdentityUUID
 		{
 			retval =false;
 			throw new UserInfoException("Incorrect Password! (DEBUG) "+ auth.md5passwd+" orig: "+orig.md5passwd,0);
-		}		
+		}
+		
 		CalendarEntry[] tmp = caldb.toArray(); 
 		return tmp;
 	
