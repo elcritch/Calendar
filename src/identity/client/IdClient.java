@@ -602,7 +602,7 @@ public class IdClient
 	private int getNextSeqNum()
 	{
 		
-		if(localCalDb.db.isEmpty())
+		if(!localCalDb.db.isEmpty())
 		{				
 			
 			int[] seqId = new int[localCalDb.db.size()];
