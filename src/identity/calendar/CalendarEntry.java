@@ -71,7 +71,13 @@ public class CalendarEntry implements Serializable
 		this.status = status;
 		this.descr = descr;
 		this.duration = duration;
-		// need to check and make sure this is correct.
+	}
+	
+	public CalendarEntry copy( )
+	{
+		CalendarEntry copy;
+		copy = new CalendarEntry(this.uuid, this.id, this.datetime, this.status, this.descr, this.duration );
+		return copy;
 	}
 	
 	public CalendarEntry(int id, Date datetime, String status, String descr, int duration ) {
