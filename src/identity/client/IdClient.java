@@ -294,6 +294,7 @@ public class IdClient
 					//truncate cod comes here
 					
 					int id =getNextSeqNum();
+					System.out.println("Sequence number is :"+id);
 //					DateFormat df = CalendarEntry.getDF();
 //					SimpleDateFormat formatter=  (SimpleDateFormat) df;
 					Date datetime =CalendarEntry.getDF().parse(argsHash.get("-t"));
@@ -634,7 +635,7 @@ public class IdClient
 				
 			}
 			Arrays.sort(seqId);
-			
+		
 			return seqId[localCalDb.db.size()] +1;
 			 
 		}	
