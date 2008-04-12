@@ -83,10 +83,12 @@ public class CalendarDB
 		String [] parts;
 		
 		BufferedReader dbStreamIn = null;
+		
 		try {
 			// open file
 			dbFile = (new File(dbFileName)).getAbsoluteFile();
-			System.out.println(" Calendar file: " + dbFile);
+			
+			System.out.println("Calendar file: " + dbFile);
 
 			// read in file and close
 			// Alright Java, is this elegant? Really, is it? Come on C does better than this!

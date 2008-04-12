@@ -1,5 +1,6 @@
 package identity.client;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -35,11 +36,20 @@ public class IdClient
 	
 	private int type;
 	public static Hashtable<String, String> argsHash = new Hashtable<String, String>();
-	public static void main(String[] args)
+	public static void main(String[] args) throws Exception
 	{
-		//System.err.println("Beginning Static");
-		System.setProperty("javax.net.ssl.trustStore", "../resources/Client_Truststore");
-		System.setProperty("java.security.policy", "../resources/mysecurity.policy");
+		String client_trust = "./resources/Client_Truststore";
+		String security_policy = "./resources/mysecurity.policy";
+		File client_trust_file = new File(client_trust);
+		File security_policy_file = new File(security_policy);
+		
+		if (!client_trust_file.canRead()) 
+			throw new Exception("Cannot find client trust store: "+client_trust_file);
+		if (!security_policy_file.canRead()) 
+			throw new Exception("Cannot find security policy: "+security_policy_file);
+		
+		System.setProperty("javax.net.ssl.trustStore", client_trust);
+		System.setProperty("java.security.policy", security_policy);
 		/*System.setSecurityManager(new RMISecurityManager());*/
 
 		/*if (args.length != 1) {

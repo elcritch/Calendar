@@ -4,6 +4,7 @@ import identity.calendar.CalendarDBServer;
 import identity.calendar.CalendarEntry;
 
 import java.io.File;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -41,6 +42,7 @@ public class IdentityServer implements IdentityUUID
 	 */
 	private static final long serialVersionUID = 2503049572587527151L;
 	private static int registryPort = 5299;
+	
 	private String name;
 	private UserInfoDataBase userDBwrapper;
 	private ConcurrentHashMap<UUID, UserInfo> userdb;
@@ -85,8 +87,9 @@ public class IdentityServer implements IdentityUUID
 
 	/**
 	 * Main method. Yep. Main.
+	 * @throws IOException 
 	 */
-	public static void main(String args[])
+	public static void main(String args[]) throws IOException
 	{
 		// parse the port number
 		if (args.length > 0) {
@@ -96,7 +99,8 @@ public class IdentityServer implements IdentityUUID
 		String certName = "./resources/Server_Keystore";
 		File cert = new File(certName);
 		System.out.println("Can read cert file? "+cert.canRead());
-		
+		System.out.println("cert file location: "+cert.getCanonicalPath());
+
 		// setup the properties
 		System.out.println("Setting System Properties....");
 		System.setProperty("javax.net.ssl.keyStore", certName);
