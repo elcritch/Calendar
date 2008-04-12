@@ -19,7 +19,7 @@ public class UserInfoDataBase
 	// TODO? synchronize the creation of the hashlist?
 	public ConcurrentHashMap<UUID, UserInfo> dbHash;
 
-	//private File dbFile;
+	private File dbFile;
 	private String dbFileName;
 
 	@SuppressWarnings("unchecked") // ha, gotta love Java! ;)
@@ -30,7 +30,7 @@ public class UserInfoDataBase
 		ObjectInputStream dbStreamIn = null;
 		try {
 			// open file
-			File dbFile = (new File(dbFileName)).getAbsoluteFile();
+			dbFile = (new File(dbFileName)).getAbsoluteFile();
 			System.out.println("file: " + dbFile);
 
 			// read in file and close
@@ -47,7 +47,7 @@ public class UserInfoDataBase
 			System.out.println("\nRecreating dbHash");
 			for (UserInfo user: readarray) {
 				dbHash.put(user.uuid, user);
-				System.out.println("create: " + user.uuid);
+				// System.out.println("create: " + user.uuid);
 			}
 		     
 			// TODO! use thread to spin off the timing for checkpointing.
@@ -68,7 +68,7 @@ public class UserInfoDataBase
 			System.exit(3);
 		}
 		
-		System.out.println("Spinning off thread?");
+		// System.out.println("Spinning off thread?");
 		CheckPointer checkpointer = new CheckPointer(this,60);
 		new Thread(checkpointer).start();
 	}
@@ -103,19 +103,16 @@ public class UserInfoDataBase
 	synchronized public void checkpoint() throws UserInfoException
 	{
 		// writeout file
-		ObjectOutputStream dbStreamOut;
 		// dumpy hashmap into an array then write the array.
 		UserInfo[] dumparray = toArray();
 
-		File dbFileOut;
 		try {
-			dbFileOut = (new File(dbFileName)).getAbsoluteFile();
 
-			dbStreamOut = new ObjectOutputStream( new FileOutputStream(dbFileOut.getCanonicalPath(), false) );
+			ObjectOutputStream dbStreamOut = new ObjectOutputStream( new FileOutputStream(dbFile, false) );
 			dbStreamOut.writeUnshared(dumparray);
 			dbStreamOut.close();
 			dbStreamOut = null;
-			System.out.println("Checkpointed UUID ArrayList File: " + dbFileOut);
+			System.out.println("Checkpointed User Information database: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

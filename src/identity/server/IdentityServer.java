@@ -55,6 +55,7 @@ public class IdentityServer implements IdentityUUID
 		userDBwrapper = new UserInfoDataBase( "defaultUserInfo.db");
 		userdb = userDBwrapper.dbHash;
 		caldb = new CalendarDBServer("servercalendar.scal");
+		
 	}
 
 	/**
@@ -72,10 +73,7 @@ public class IdentityServer implements IdentityUUID
 			IdentityUUID ccAuth = (IdentityUUID) UnicastRemoteObject.exportObject(this, 0,
 			                    rmiClientSocketFactory, rmiServerSockeyFactory);
 			Registry registry = LocateRegistry.createRegistry(registryPort);
-			//MyServer server = new MyServer(); 
-			//Naming.rebind("//localhost:5113/NiftyIdServer", server); 
 
-			//registry.rebind("//localhost:5299/"+name, ccAuth);
 			registry.rebind(name, ccAuth);
 			System.out.println(name + " bound in registry");
 		}
@@ -379,13 +377,15 @@ public class IdentityServer implements IdentityUUID
 			calEntry.setUuid(orig.uuid);
 		
 		caldb.addEntry(calEntry);
+		
+		System.out.println("debug called addCalendarEntry: "+clientaddr());
 		return retval;
 	}
 
 	public boolean deleteCalendarEntry(CalendarEntry calEntry, UserInfo auth)
 			throws UserInfoException, RemoteException {
 		// TODO Auto-generated method stub
-		boolean retval =true;
+		boolean retval = true;
 		// TODO Auto-generated method stub
 		UserInfo orig = authenitcate(auth);
 		
@@ -400,6 +400,8 @@ public class IdentityServer implements IdentityUUID
 			calEntry.setUuid(orig.uuid);
 		
 		caldb.delEntry(calEntry);
+		
+		System.out.println("debug called addCalendarEntry: "+clientaddr());
 		return retval;
 	}
 

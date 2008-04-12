@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,7 +43,7 @@ public class CalendarDB
 	private File dbFile;
 	
 	private boolean isServer = false;
-	
+
 	
 	/**
 	* @param datefmt
@@ -58,10 +60,22 @@ public class CalendarDB
 		
 		parseFile(filename);
 
-		//CheckPointer checkpointer = new CheckPointer(this,60);
-		//new Thread(checkpointer).start();
+		int delay = 7*1000; // delay for 5 sec.
+		int period = 49*1000; // repeatTimer timer = new Timer();
+		
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(new TimerTask()
+		{
+			public void run()
+			{
+				//method to write the objects from hashtable to a file
+				writeFile();
+			}
+		}, delay, period);
+
 	}
 
+	
 	public void parseFile(String filename)
 	{
 		dbFileName = filename;
@@ -281,7 +295,7 @@ public class CalendarDB
 		for ( CalendarEntry entry: test.toArray()) {
 			System.out.println("toArray: "+entry);
 		}
-		System.exit(0);
+//		System.exit(0);
 	}
 
 	public boolean isServer() {

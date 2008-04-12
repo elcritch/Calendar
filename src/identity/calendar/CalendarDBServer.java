@@ -8,6 +8,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CalendarDBServer extends CalendarDB {
 	public ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, CalendarEntry>> db;
     private boolean isServer = true;
+    
 	/**
 	 * @param filename
 	 */
@@ -30,6 +33,20 @@ public class CalendarDBServer extends CalendarDB {
 		// read in entries
 		parseFile(filename);
 		
+
+		int delay = 7*1000; // delay for 5 sec.
+		int period = 49*1000; // repeatTimer timer = new Timer();
+		
+	    Timer timer = new Timer();
+		timer.scheduleAtFixedRate(new TimerTask()
+		{
+			public void run()
+			{
+				//method to write the objects from hashtable to a file
+				writeFile();
+			}
+		}, delay, period);
+
 		//CheckPointer checkpointer = new CheckPointer(this,60);
 		//new Thread(checkpointer).start();
 	}
@@ -170,7 +187,7 @@ public class CalendarDBServer extends CalendarDB {
 		}
 		
 		
-		System.exit(0);
+//		System.exit(0);
 	}
 
 	@Override
