@@ -54,7 +54,7 @@ public class IdentityServer implements IdentityUUID
 		System.out.println("Creating new RMI agent!");
 		userDBwrapper = new UserInfoDataBase( "defaultUserInfo.db");
 		userdb = userDBwrapper.dbHash;
-		caldb = new CalendarDBServer("CALENDAR");
+		caldb = new CalendarDBServer("servercalendar.scal");
 	}
 
 	/**
@@ -396,30 +396,27 @@ public class IdentityServer implements IdentityUUID
 			
 		}
 	
+		if (calEntry.uuid == null)
+			calEntry.setUuid(orig.uuid);
+		
 		caldb.delEntry(calEntry);
 		return retval;
 	}
 
-	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo,
-			UserInfo auth, boolean mode) throws UserInfoException,
-			RemoteException {
+	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo, UserInfo auth, boolean mode) 
+		throws UserInfoException, RemoteException {
 		// TODO Auto-generated method stub
 		boolean retval = true;
 		// TODO Auto-generated method stub
-		UserInfo orig = userDBwrapper.getUserName(auth.username);
+		UserInfo orig = authenitcate(auth);
 		
 		if (orig == null)
 		{
 			retval = false;
 			throw new UserInfoException("Cannot find given Username",2);
 		}
-		if (!auth.md5passwd.equals( orig.md5passwd))
-		{
-			retval =false;
-			throw new UserInfoException("Incorrect Password! (DEBUG) "+ auth.md5passwd+" orig: "+orig.md5passwd,0);
-		}
 		
-		CalendarEntry[] tmp = caldb.toArray(); 
+		CalendarEntry[] tmp = caldb.getHashUUID().values().toArray(new CalendarEntry[0]); 
 		return tmp;
 	
 	}
