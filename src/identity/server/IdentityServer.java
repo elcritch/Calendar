@@ -329,7 +329,8 @@ public class IdentityServer implements IdentityUUID
 	}
 
 	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo,
-			UserInfo auth) throws UserInfoException, RemoteException {
+			UserInfo auth, boolean mode) throws UserInfoException,
+			RemoteException {
 		// TODO Auto-generated method stub
 		return null;
 	}

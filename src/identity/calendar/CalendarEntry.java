@@ -25,7 +25,7 @@ public class CalendarEntry implements Serializable {
 	public UUID uuid;
 	public Integer id;
 	public Date datetime;
-	public boolean isPublic;
+	public String status;
 	public String descr;
 	public Integer duration;
 	
@@ -35,7 +35,7 @@ public class CalendarEntry implements Serializable {
 		this.uuid = null;
 		this.id = null;
 		this.datetime = null;
-		this.isPublic = false;
+		this.status = null;
 		this.descr = null;
 		this.duration = null;
 	}
@@ -46,11 +46,11 @@ public class CalendarEntry implements Serializable {
 	 * @param  
 	 * @return 
 	 */
-	public CalendarEntry(UUID uuid, int id, Date datetime, boolean isPublic, String descr, int duration ) {
+	public CalendarEntry(UUID uuid, int id, Date datetime, String status, String descr, int duration ) {
 		this.uuid = uuid;
 		this.id = id;
 		this.datetime = datetime;
-		this.isPublic = isPublic;
+		this.status = status;
 		this.descr = descr;
 		this.duration = duration;
 		// need to check and make sure this is correct.
@@ -66,11 +66,11 @@ public class CalendarEntry implements Serializable {
 			// parse the entry
 			int id = Integer.parseInt(p[i++]);
 			Date datetime = df.parse(p[i++]);
-			boolean isPublic = Boolean.parseBoolean(p[i++]);
+			String status = p[i++];
 			String descr = p[i++];
 			int duration = Integer.parseInt(p[i++]);
 			
-			return new CalendarEntry(uuid, id,datetime,isPublic,descr,duration);
+			return new CalendarEntry(uuid, id,datetime,status,descr,duration);
 		} catch (Exception e) {
 			return null;
 		}
@@ -80,13 +80,18 @@ public class CalendarEntry implements Serializable {
 	public void setUuid(UUID uuid) {
 		this.uuid = uuid;
 	}
+	
+	public void privatizeDescr() {
+		if (status.toLowerCase().equals("private"))
+			descr = "";
+	}
 
 	public String toString() {
 		String str;
 		str = (uuid == null) ? null : uuid.toString()+"#";
 		str += id.toString() + "#";
 		str += datetime.toString() + "#";
-		str += (isPublic) ? "public#" : "private#";
+		str += status+"#";
 		str += descr.toString() + "#";
 		str += duration.toString() + "#";
 		
