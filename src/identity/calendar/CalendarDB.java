@@ -77,13 +77,17 @@ public class CalendarDB
 			dbStreamIn = new BufferedReader(new FileReader(dbFileName));
 
 			// read the first line then read all the events into the hashmap
-			line = dbStreamIn.readLine();
-			if ( (parts = line.split("#")).length == 2 ) {
-				useruuid = UUID.fromString(parts[0]);
-				username = parts[1];
-			}
-			else {
-				System.err.println("Incorrect file format: " + dbFile);
+			if (!isServer) {
+				System.out.println("Client side, reading in user's UUID and name.");
+				line = dbStreamIn.readLine();
+				if ( (parts = line.split("#")).length == 2 ) {
+					useruuid = UUID.fromString(parts[0]);
+					username = parts[1];
+				}
+				else {
+					System.err.println("Check that the file is correct type, server/client.");
+					throw new IOException("Cannot open file for I/O. Incorrect format.");
+				}
 			}
 
 			// add all the values to the HashMap
@@ -199,7 +203,9 @@ public class CalendarDB
 			dbFile.delete();
 			dbStreamOut = new BufferedWriter( new FileWriter(dbFile, false) );
 			
-			dbStreamOut.write(""+useruuid+"#"+username+"#\n");
+			if (!isServer)
+				dbStreamOut.write(""+useruuid+"#"+username+"#\n");
+			
 			for (CalendarEntry entry : dumparray)
 				dbStreamOut.write(entry.toString() + "\n");
 

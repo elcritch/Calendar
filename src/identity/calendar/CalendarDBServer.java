@@ -29,7 +29,7 @@ public class CalendarDBServer extends CalendarDB {
 		//new Thread(checkpointer).start();
 	}
 	
-	public void addEntry(CalendarEntry entry) throws IllegalArgumentException {
+	public boolean addEntry(CalendarEntry entry) {
 		UUID key = entry.uuid;
 		Integer keyid = entry.id;
 		ConcurrentHashMap<Integer, CalendarEntry> userdb;
@@ -37,10 +37,12 @@ public class CalendarDBServer extends CalendarDB {
 		// if the uuid doesn't exist in the database, create a new HashMap to add the entry
 		db.putIfAbsent(key, new ConcurrentHashMap<Integer, CalendarEntry>(20));
 		userdb = db.get(key);
-		if ( !db.containsKey(keyid))
+		if ( !db.containsKey(keyid)) {
 			userdb.put(keyid, entry);
+			return true;
+		}
 		else
-			throw new IllegalArgumentException("Key already in database");	
+			return false;
 	}
 	
 
@@ -65,5 +67,15 @@ public class CalendarDBServer extends CalendarDB {
 			else return true;
 		}
 	}
+	
+	public CalendarEntry[] toArray()
+	{
+		ConcurrentHashMap<Integer, CalendarEntry> all = new ConcurrentHashMap<Integer, CalendarEntry>(200);
 
+		for ( ConcurrentHashMap<Integer, CalendarEntry> hm : db.values() ) {
+			all.putAll(hm);
+		}
+		return all.values().toArray(new CalendarEntry[0]);
+	}
+	
 }
