@@ -467,22 +467,26 @@ public class IdClient
 			case 5:
 				/*Create calendar entry*/
 				result =userdb.lookupUUID(options.username);
-				options =options.setMd5passwd(password(options.md5passwd,result.uuid));
-				CalendarEntry localEntry =calentry;
-				calentry.privatizeDescr();
-				retval = userdb.addCalendarEntry(calentry, options);
-				if(retval ==true)
+				if(result!=null)
 				{
+					options =options.setMd5passwd(password(options.md5passwd,result.uuid));
+					CalendarEntry localEntry =calentry;
+					calentry.privatizeDescr();
+					retval = userdb.addCalendarEntry(calentry, options);
+					if(retval ==true)
+					{
 					//Add the entry to the local database
-					
-					localCalDb.addEntry(localEntry);
+					 localCalDb.addEntry(localEntry);
+					}
+					else
+						System.out.println("Adding Calendar entry failed");
 				}
-				else
-					System.out.println("Adding Calendar entry failed");
-				break;
+					break;
 			case 6:
 				/**/
 				result =userdb.lookupUUID(options.username);
+				if(result!=null)
+				{
 				options =options.setMd5passwd(password(options.md5passwd,result.uuid));
 				CalendarEntry localentry =calentry;
 				calentry.privatizeDescr();			
@@ -493,12 +497,15 @@ public class IdClient
 					localCalDb.delEntry(localentry);
 				}
 				else
-					System.out.println("Deleting Calendar entry failed");				
+					System.out.println("Deleting Calendar entry failed");
+				}
 				break;
 			case 7:
 				/*Dispaly other user's calendar entry*/
 				boolean mode =false;
 				result =userdb.lookupUUID(options.username);
+				if(result!=null)
+				{
 				options =options.setMd5passwd(password(options.md5passwd,result.uuid));				
 			   
 				if(argsHash.get("-l").equalsIgnoreCase("all"))
@@ -513,7 +520,7 @@ public class IdClient
 				}
 				else
 					System.out.println("UserName does not exists");
-							    
+				}			    
 				break;
 			case 8:
 				/*Display personal calendar entry*/
