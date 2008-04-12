@@ -38,8 +38,8 @@ public class IdClient
 	public static void main(String[] args)
 	{
 		//System.err.println("Beginning Static");
-		System.setProperty("javax.net.ssl.trustStore", "./resources/Client_Truststore");
-		System.setProperty("java.security.policy", "./resources/mysecurity.policy");
+		System.setProperty("javax.net.ssl.trustStore", "../resources/Client_Truststore");
+		System.setProperty("java.security.policy", "../resources/mysecurity.policy");
 		/*System.setSecurityManager(new RMISecurityManager());*/
 
 		/*if (args.length != 1) {
