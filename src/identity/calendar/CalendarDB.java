@@ -57,7 +57,7 @@ public class CalendarDB
 		username = uname;
 		// read in entries
 		String filename = "calendar" + "_"+uname+".cal";
-		
+		System.out.println("debug: filename = "+filename);
 		parseFile(filename);
 
 		int delay = 7*1000; // delay for 5 sec.
@@ -92,7 +92,7 @@ public class CalendarDB
 
 			// read in file and close
 			// Alright Java, is this elegant? Really, is it? Come on C does better than this!
-			dbStreamIn = new BufferedReader(new FileReader(dbFileName));
+			dbStreamIn = new BufferedReader(new FileReader(dbFile));
 
 			System.out.println("reading Server file: "+isServer());
 
@@ -214,8 +214,7 @@ public class CalendarDB
 		try {
 			dbFile.delete();
 			dbStreamOut = new BufferedWriter( new FileWriter(dbFile, false) );
-			if (!isServer())
-				dbStreamOut.write(""+useruuid+"#"+username+"#\n");
+
 			
 			for (CalendarEntry entry : dumparray)
 				dbStreamOut.write(entry.toString() + "\n");
