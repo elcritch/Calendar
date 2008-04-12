@@ -471,7 +471,7 @@ public class IdClient
 				{
 					System.out.println("Received uuid "+result.uuid);
 					options =options.setMd5passwd(password(options.md5passwd,result.uuid));
-					CalendarEntry localEntry =calentry;
+					CalendarEntry localEntry =calentry.copy();
 					calentry.privatizeDescr();
 					retval = userdb.addCalendarEntry(calentry, options);
 					if(retval ==true)
@@ -492,7 +492,7 @@ public class IdClient
 				{
 					System.out.println("Received uuid "+result.uuid);
 				options =options.setMd5passwd(password(options.md5passwd,result.uuid));
-				CalendarEntry localentry =calentry;
+				CalendarEntry localentry =calentry.copy();
 				calentry.privatizeDescr();			
 				retval =userdb.deleteCalendarEntry(calentry, options);
 				if(retval ==true)
