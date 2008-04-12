@@ -7,8 +7,11 @@ import java.rmi.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.UUID;
 
 import sun.misc.BASE64Encoder;
@@ -59,6 +62,8 @@ public class IdClient
 			numinputs = 2;
 		}
 		IdClient client = new IdClient();
+		client.parseInput(args);
+		//client.printArgsHash();
 		client.localCalDb= new CalendarDB("calendar");
 		client.parseInput(args);
 		client.printArgsHash();
@@ -285,8 +290,8 @@ public class IdClient
 					if(argsHash.get("-des").length() >128)
 					  System.out.println("Description too long ..trucating to 128 bytes");
 					//truncate cod comes here
-					//get the unique id from local db
-					int id =0;
+					
+					int id =getNextSeqNum();
 					DateFormat df = DateFormat.getDateTimeInstance();
 					Date datetime = df.parse(argsHash.get("-t"));
 					boolean isPublic =false;
@@ -330,7 +335,7 @@ public class IdClient
 					type = 6;	
 				}
 				else
-				   exit_message("Incorrect number of parameters to parse.");
+				   exit_message("Incorrect number of parameters to Delete Calendar entry.");
 					
 			}
 			//switch 7
@@ -365,7 +370,7 @@ public class IdClient
 						type = 8;	
 					}
 					else
-					 exit_message("Incorrect number of parameters to parse.");
+					 exit_message("Incorrect number of parameters to Display Calendar.");
 				
 			}
 			else
@@ -374,7 +379,7 @@ public class IdClient
 			}
 		}
 		catch (ArrayIndexOutOfBoundsException ne) {
-			exit_message("Incorrect number of parameters to parse.");
+			exit_message("Incorrect number of parameters to parse .");
 		}
 		catch (UserInfoException e) {
 			// TODO Auto-generated catch block
@@ -575,6 +580,26 @@ public class IdClient
 			
 	
 		
+	}
+	private int getNextSeqNum()
+	{
+		
+		if(localCalDb.db.isEmpty())
+		{				
+			
+			int[] seqId = new int[localCalDb.db.size()];
+			for (int i=0;i<localCalDb.db.size();i++)
+			{
+				seqId[i] = Integer.parseInt((localCalDb.db.keySet().toArray())[i].toString());
+				
+			}
+			Arrays.sort(seqId);
+			
+			return seqId[localCalDb.db.size()] +1;
+			 
+		}	
+		else
+			return 1;
 	}
 	private void  printArgsHash()
 	{
