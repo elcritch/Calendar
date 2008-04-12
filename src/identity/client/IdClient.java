@@ -571,7 +571,7 @@ public class IdClient
 					else
 					{
 					    System.out.println("Display: "+localEntries.length);
-						for (int i = 0; i < localEntries.length; ++i ) 
+						for (int i = 0; i < localEntries.length; i++ ) 
 						  System.out.println(localEntries[i]);
 					}
 				}			
