@@ -47,10 +47,7 @@ public class UserInfoDataBase
 			System.out.println("\nRecreating dbHash");
 			for (UserInfo user: readarray) {
 				dbHash.put(user.uuid, user);
-				// System.out.println("create: " + user.uuid);
-			}
-		     
-			// TODO! use thread to spin off the timing for checkpointing.
+			}		     
 
 		}
 		catch (FileNotFoundException filenotfound) {
@@ -68,9 +65,26 @@ public class UserInfoDataBase
 			System.exit(3);
 		}
 		
-		// System.out.println("Spinning off thread?");
-		CheckPointer checkpointer = new CheckPointer(this,60);
-		new Thread(checkpointer).start();
+		int delay = 7*1000; // delay for 5 sec.
+		int period = 49*1000; // repeatTimer timer = new Timer();
+		
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(new TimerTask()
+		{
+			public void run()
+			{
+				//method to write the objects from hashtable to a file
+					try {
+						checkpoint();
+					} catch (UserInfoException e) {
+						// TODO Auto-generated catch block
+						System.err.println("UserInfoException while checkpoint." +
+								"File might be corrupt!");					
+					}
+				
+			}
+		}, delay, period);
+		
 	}
 	/*
 	  NOTE: might need to manually synchronize the ArrayList in order to serialize it?
@@ -107,11 +121,13 @@ public class UserInfoDataBase
 		UserInfo[] dumparray = toArray();
 
 		try {
-
+			// delete file, then checkpoint it
+			dbFile.delete();
+			
 			ObjectOutputStream dbStreamOut = new ObjectOutputStream( new FileOutputStream(dbFile, false) );
 			dbStreamOut.writeUnshared(dumparray);
 			dbStreamOut.close();
-			dbStreamOut = null;
+			
 			System.out.println("Checkpointed User Information database: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
@@ -195,9 +211,9 @@ public class UserInfoDataBase
 				System.out.println("bar: " + user.uuid);
 			}
 
-			System.out.println("\n\nCheckpointing2");
-			for (int i = 0; i < 100; ++i)
-				foodb.checkpoint();
+			//System.out.println("\n\nCheckpointing2");
+			//for (int i = 0; i < 100; ++i)
+			//	foodb.checkpoint();
 
 			System.out.println("\nTesting Reading");
 			UserInfoDataBase bar2 = new UserInfoDataBase("test.db");
@@ -215,61 +231,7 @@ public class UserInfoDataBase
 			e.printStackTrace();
 		}
 
-		System.exit(0);
+//		System.exit(0);
 	}
 
 }
-
-class CheckPointer implements Runnable 
-{
-
-	private Thread blinker;
-	UserInfoDataBase database;
-	boolean running = true;
-	private int seconds;
-	
-	CheckPointer(UserInfoDataBase database, int seconds) {
-		this.database = database;
-		this.seconds = seconds;
-		System.out.println("CheckPointer is born!");
-		System.out.println("CheckPointer has database: "+database);
-	}
-
-    public void start() {
-		System.err.println("Starting CheckPointer");
-
-        blinker = new Thread(this);
-        blinker.start();
-        running = true;
-    }
-	
-	public void stop()
-	{
-		running = false;
-	}
-
-	public void run()
-	{
-		Thread thisThread = Thread.currentThread();
-		System.err.println("Running CheckPointer: "+blinker+" this: "+thisThread);
-//		while (blinker == thisThread) {
-		while (running) {
-			try {
-				Thread.sleep(seconds*1000);
-			}
-			catch (InterruptedException e) {}
-			
-			try {
-				System.err.println("Trying to checkpoint");
-				database.checkpoint();
-				
-			} catch (UserInfoException e) {
-				System.err.println("UserInfoException: "+e);
-				//e.printStackTrace();
-			}
-		}
-	}
-
-}
-
-
