@@ -1,5 +1,6 @@
 package identity.server;
 
+import identity.calendar.CalendarDBServer;
 import identity.calendar.CalendarEntry;
 
 import java.io.File;
@@ -43,6 +44,7 @@ public class IdentityServer implements IdentityUUID
 	private String name;
 	private UserInfoDataBase userDBwrapper;
 	private ConcurrentHashMap<UUID, UserInfo> userdb;
+	private CalendarDBServer caldb;
 	/**
 	 * Default Constructor
 	 */
@@ -52,6 +54,7 @@ public class IdentityServer implements IdentityUUID
 		System.out.println("Creating new RMI agent!");
 		userDBwrapper = new UserInfoDataBase( "defaultUserInfo.db");
 		userdb = userDBwrapper.dbHash;
+		caldb = new CalendarDBServer("CALENDAR");
 	}
 
 	/**
@@ -316,23 +319,76 @@ public class IdentityServer implements IdentityUUID
 	}
 
 	public boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth)
-			throws UserInfoException, RemoteException {
+			throws UserInfoException, RemoteException 
+	{
+		boolean retval =true;
 		// TODO Auto-generated method stub
+		UserInfo orig = userDBwrapper.getUserName(auth.username);
 		
-		return false;
+		if (orig == null)
+		{
+			retval =false;
+			throw new UserInfoException("Cannot find given Username",2);
+			
+		}
+		if (!auth.md5passwd.equals( orig.md5passwd))
+		{
+			retval =false;
+			throw new UserInfoException("Incorrect Password! (DEBUG) "+ auth.md5passwd+" orig: "+orig.md5passwd,0);
+			
+		}
+		
+		
+		caldb.addEntry(calEntry);
+		return retval;
 	}
 
 	public boolean deleteCalendarEntry(CalendarEntry calEntry, UserInfo auth)
 			throws UserInfoException, RemoteException {
 		// TODO Auto-generated method stub
-		return false;
+		boolean retval =true;
+		// TODO Auto-generated method stub
+		UserInfo orig = userDBwrapper.getUserName(auth.username);
+		
+		if (orig == null)
+		{
+			retval =false;
+			throw new UserInfoException("Cannot find given Username",2);
+			
+		}
+		if (!auth.md5passwd.equals( orig.md5passwd))
+		{
+			retval =false;
+			throw new UserInfoException("Incorrect Password! (DEBUG) "+ auth.md5passwd+" orig: "+orig.md5passwd,0);
+			
+		}		
+		caldb.delEntry(calEntry);
+		return retval;
 	}
 
 	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo,
 			UserInfo auth, boolean mode) throws UserInfoException,
 			RemoteException {
 		// TODO Auto-generated method stub
-		return null;
+		boolean retval =true;
+		// TODO Auto-generated method stub
+		UserInfo orig = userDBwrapper.getUserName(auth.username);
+		
+		if (orig == null)
+		{
+			retval =false;
+			throw new UserInfoException("Cannot find given Username",2);
+			
+		}
+		if (!auth.md5passwd.equals( orig.md5passwd))
+		{
+			retval =false;
+			throw new UserInfoException("Incorrect Password! (DEBUG) "+ auth.md5passwd+" orig: "+orig.md5passwd,0);
+			
+		}		
+		CalendarEntry[] tmp = caldb.toArray(); 
+		return tmp;
+	
 	}
 
 	
