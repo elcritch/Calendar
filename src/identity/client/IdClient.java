@@ -38,8 +38,8 @@ public class IdClient
 	public static Hashtable<String, String> argsHash = new Hashtable<String, String>();
 	public static void main(String[] args) throws Exception
 	{
-		String client_trust = "./resources/Client_Truststore";
-		String security_policy = "./resources/mysecurity.policy";
+		String client_trust = "../resources/Client_Truststore";
+		String security_policy = "../resources/mysecurity.policy";
 		File client_trust_file = new File(client_trust);
 		File security_policy_file = new File(security_policy);
 		
@@ -570,7 +570,7 @@ public class IdClient
 						System.out.println("No Calendar Entries found");	
 					else
 					{
-					    System.out.println("Display: ");
+					    System.out.println("Display: "+localEntries);
 						for (int i = 0; i < localEntries.length; ++i ) 
 						  System.out.println(localEntries[i]);
 					}
