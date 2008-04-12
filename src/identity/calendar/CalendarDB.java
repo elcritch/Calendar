@@ -39,7 +39,10 @@ public class CalendarDB
 
 	private String dbFileName;
 	private File dbFile;
+	
 	private boolean isServer = false;
+	
+	
 	/**
 	* @param datefmt
 	*/
@@ -55,7 +58,6 @@ public class CalendarDB
 		parseFile(filename);
 
 
-		System.out.println("Spinning off timer?");
 		//CheckPointer checkpointer = new CheckPointer(this,60);
 		//new Thread(checkpointer).start();
 	}
@@ -76,39 +78,42 @@ public class CalendarDB
 			// Alright Java, is this elegant? Really, is it? Come on C does better than this!
 			dbStreamIn = new BufferedReader(new FileReader(dbFileName));
 
-			// read the first line then read all the events into the hashmap
-			if (!isServer) {
-				System.out.println("Client side, reading in user's UUID and name.");
-				line = dbStreamIn.readLine();
-				if ( (parts = line.split("#")).length == 2 ) {
-					useruuid = UUID.fromString(parts[0]);
-					username = parts[1];
-				}
-				else {
-					System.err.println("Check that the file is correct type, server/client.");
-					throw new IOException("Cannot open file for I/O. Incorrect format.");
-				}
-			}
+			System.out.println("reading Server file: "+isServer());
 
 			// add all the values to the HashMap
 			System.out.println("\nRecreating CalendarHash");
 			CalendarEntry entry;
 
 			try {
+				// read the first line then read all the events into the hashmap
+				if (!isServer()) {
+					line = dbStreamIn.readLine();
+					if ( (parts = line.split("#")).length == 2 ) {
+						useruuid = UUID.fromString(parts[0]);
+						username = parts[1];
+					}
+					else {
+						System.err.println("Check that the file is correct type, server/client.");
+						throw new IOException("Cannot open file for I/O. Incorrect format.");
+					}
+				}
+				
 				while ( (line = dbStreamIn.readLine()) != null ) {
 					parts = line.split("#");
-					System.out.print("parts: "+parts.length+" vals:");
-					for (String a: parts)
-						System.out.print(" "+a);
-					System.out.println("");
-					System.out.println("Calling parseStringArray");
-					entry = CalendarEntry.parseStringArray(parts, isServer);
-					System.out.println("read: "+entry);
+					//System.out.print("parts: "+parts.length+" vals:");
+					//for (String a: parts)
+					//	System.out.print(" "+a);
+					//System.out.println("");
+					entry = CalendarEntry.parseStringArray(parts, isServer());
+					System.out.println("debug read: "+entry);
 					addEntry(entry);
 				}
 			}
 			catch (IllegalArgumentException e) {
+				System.out.flush();
 				System.err.println("Invalid key while recreating list");
+				e.printStackTrace();
+				System.err.flush();
 			}
 
 			dbStreamIn.close();
@@ -162,12 +167,22 @@ public class CalendarDB
 
 	public boolean delEntry(Integer id)
 	{
-		if (db.remove(id) != null)
+		if (id == null)
+			return false;
+		else if (db.remove(id) != null)
 			return true;
 		else
 			return false;
 	}
+	
+	public CalendarEntry getEntry(CalendarEntry entry) {
+		return getEntry(entry.id);
+	}
 
+	public CalendarEntry getEntry(Integer key) {
+		return db.get(key);
+	}
+	
 	/**
 	*  Returns a synchronizedList containing the UUID database.
 	* @return List synchronizedList containing the UUID database
@@ -182,6 +197,7 @@ public class CalendarDB
 	 * Returns an array of UserInfo[] type from ConcurrentHashMap
 	 * @return array holding the contents of the ConcurrentHashMap
 	 */
+	
 	public CalendarEntry[] toArray()
 	{
 		return db.values().toArray(new CalendarEntry[0]);
@@ -202,15 +218,14 @@ public class CalendarDB
 		try {
 			dbFile.delete();
 			dbStreamOut = new BufferedWriter( new FileWriter(dbFile, false) );
-			
-			if (!isServer)
+			if (!isServer())
 				dbStreamOut.write(""+useruuid+"#"+username+"#\n");
 			
 			for (CalendarEntry entry : dumparray)
 				dbStreamOut.write(entry.toString() + "\n");
 
 			dbStreamOut.close();
-			System.out.println("Checkpointed UUID ArrayList File: " + dbFile);
+			System.out.println("Checkpointed calendar file: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -279,6 +294,14 @@ public class CalendarDB
 			System.out.println("toArray: "+entry);
 		}
 		System.exit(0);
+	}
+
+	public boolean isServer() {
+		return isServer;
+	}
+
+	public void setServer(boolean isServer) {
+		this.isServer = isServer;
 	}
 
 
