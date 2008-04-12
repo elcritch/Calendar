@@ -5,6 +5,8 @@ package identity.calendar;
 
 import java.io.Serializable;
 import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
@@ -29,9 +31,21 @@ public class CalendarEntry implements Serializable {
 	public String descr;
 	public Integer duration;
 	
-	public static DateFormat df = DateFormat.getDateTimeInstance();
 	
-	CalendarEntry() {
+	private static String df = "yyyy/MM/dd h:mma";
+	private static SimpleDateFormat formatter = null;
+	
+	synchronized public static DateFormat geDF() {
+	   SimpleDateFormat formatter = new SimpleDateFormat(df);
+	   return formatter;
+	}
+	synchronized public static Date dateFromString(String str) throws ParseException {
+	   if (formatter == null)
+		   formatter = new SimpleDateFormat(df);
+	   return formatter.parse(str);
+	}
+	
+	public CalendarEntry() {
 		this.uuid = null;
 		this.id = null;
 		this.datetime = null;
@@ -65,7 +79,7 @@ public class CalendarEntry implements Serializable {
 				uuid = UUID.fromString(p[i++]);
 			// parse the entry
 			int id = Integer.parseInt(p[i++]);
-			Date datetime = df.parse(p[i++]);
+			Date datetime = getDateFromString(p[i++]);
 			String status = p[i++];
 			String descr = p[i++];
 			int duration = Integer.parseInt(p[i++]);

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package identity.calendar;
 
@@ -13,6 +13,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,45 +23,48 @@ import java.util.concurrent.ConcurrentHashMap;
  * Use this class to create a calendar database for both server's and clients. The type
  * should be specified
  */
-public class CalendarDB {
-	
+public class CalendarDB
+{
+
 	/**
 	 * This contains a generic flat hashmap that can contain either server or client event 
 	 * types. The flat database model allows this class to be used for both client/server
 	 * applications with generality. Overwrite this with correct generics type.
 	 */
 	public ConcurrentHashMap<Integer, CalendarEntry> db;
-	
+
 	public DateFormat datefmt;
 	public UUID useruuid;
 	public String username;
-	
+
 	private String dbFileName;
-    private File dbFile;
-    private boolean isServer = false;
-    /**
-	 * @param datefmt
-	 */
-	public CalendarDB( ) {		
-	}
-	
-	public CalendarDB( String filename ) {
+	private File dbFile;
+	private boolean isServer = false;
+	/**
+	* @param datefmt
+	*/
+	public CalendarDB( )
+	{}
+
+	public CalendarDB( String filename )
+	{
 		db = new ConcurrentHashMap<Integer, CalendarEntry>(50);
-		
+
 		// read in entries
 		parseFile(filename);
-		
-		
+
+
 		System.out.println("Spinning off timer?");
 		//CheckPointer checkpointer = new CheckPointer(this,60);
 		//new Thread(checkpointer).start();
 	}
-	
-	public void parseFile(String filename) {
+
+	public void parseFile(String filename)
+	{
 		dbFileName = filename;
 		String line;
 		String [] parts;
-		
+
 		BufferedReader dbStreamIn = null;
 		try {
 			// open file
@@ -69,33 +74,35 @@ public class CalendarDB {
 			// read in file and close
 			// Alright Java, is this elegant? Really, is it? Come on C does better than this!
 			dbStreamIn = new BufferedReader(new FileReader(dbFileName));
-			
+
 			// read the first line then read all the events into the hashmap
 			line = dbStreamIn.readLine();
 			if ( (parts = line.split("#")).length == 2 ) {
-				useruuid = UUID.fromString(parts[0]); 
+				useruuid = UUID.fromString(parts[0]);
 				username = parts[1];
-			} else {
-				System.err.println("Incorrect file format: "+dbFile);
 			}
-			
+			else {
+				System.err.println("Incorrect file format: " + dbFile);
+			}
+
 			// add all the values to the HashMap
 			System.out.println("\nRecreating CalendarHash");
 			CalendarEntry entry;
-			
+
 			try {
-			while ( (line = dbStreamIn.readLine()) != null ) {
-				entry = CalendarEntry.parseStringArray(line.split("#"), isServer);
-				addEntry(entry);
-				System.out.println("create: " + entry);
+				while ( (line = dbStreamIn.readLine()) != null ) {
+					entry = CalendarEntry.parseStringArray(line.split("#"), isServer);
+					addEntry(entry);
+					System.out.println("create: " + entry);
+				}
 			}
-			} catch (IllegalArgumentException e) {
+			catch (IllegalArgumentException e) {
 				System.err.println("Invalid key while recreating list");
 			}
-			
+
 			dbStreamIn.close();
 
-		     
+
 			// TODO! use thread to spin off the timing for checkpointing.
 
 		}
@@ -107,16 +114,17 @@ public class CalendarDB {
 			ioe.printStackTrace();
 			System.exit(2);
 		}
-		
+
 	}
-	
+
 	/**
 	 * This method wraps adding objects to the hashmap in a generic fashion. Overwrite this 
 	 * to change hashmap key types.
 	 * @param entry add this entry to the hashmap
 	 * @throws IllegalArgumentException
 	 */
-	public void addEntry(CalendarEntry entry) throws IllegalArgumentException {
+	public void addEntry(CalendarEntry entry) throws IllegalArgumentException
+	{
 		Integer key = entry.id;
 		if ( !db.containsKey(key))
 			db.put(key, entry);
@@ -130,17 +138,19 @@ public class CalendarDB {
 	 * @param delete this entry from the hashmap
 	 * @throws IllegalArgumentException
 	 */
-	public boolean delEntry(CalendarEntry entry) {
+	public boolean delEntry(CalendarEntry entry)
+	{
 		return delEntry(entry.id);
 	}
-	
-	public boolean delEntry(Integer id) {
-		if (db.remove(id)!=null)
+
+	public boolean delEntry(Integer id)
+	{
+		if (db.remove(id) != null)
 			return true;
-		else 
+		else
 			return false;
 	}
-	
+
 	/**
 	*  Returns a synchronizedList containing the UUID database.
 	* @return List synchronizedList containing the UUID database
@@ -174,11 +184,11 @@ public class CalendarDB {
 
 		try {
 			dbFile.delete();
-			dbStreamOut = new BufferedWriter( new FileWriter(dbFile,false) );
-			
-			for (CalendarEntry entry : dumparray)
-				dbStreamOut.write(entry.toString()+"\n");
-			
+			dbStreamOut = new BufferedWriter( new FileWriter(dbFile, false) );
+
+for (CalendarEntry entry : dumparray)
+				dbStreamOut.write(entry.toString() + "\n");
+
 			dbStreamOut.close();
 			System.out.println("Checkpointed UUID ArrayList File: " + dbFile);
 		}
@@ -199,12 +209,23 @@ public class CalendarDB {
 	}
 
 
-	public static void main(String[] args)
+	public static void main(String[] args) throws ParseException
 	{
+		//classpath /Users/jaremy/proj/ds/jaremy-vamsi/bin/
+		//classpath /Users/jaremy/proj/ds/jaremy-vamsi/bin/
+		String foodate = "4/11/2006 4:55pm";
+
+		Date datetime = CalendarEntry.geDF().parse(foodate);
+		System.out.println("datetime: " + datetime);
+		System.out.println("foo = "+CalendarEntry.geDF().format(datetime) );
+		// CalendarEntry bar = CalendarEntry(UUID uuid, int id, Date datetime, String status, String descr, int duration );
+
 
 		System.exit(0);
 	}
-	
 
-	
+
+
 }
+
+
