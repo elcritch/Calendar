@@ -274,7 +274,7 @@ public class CalendarDB
 			System.out.println("bar i:"+i+" :"+bar[i]);
 		}
 		
-		CalendarDB test = new CalendarDB("daffy");
+		CalendarDB test = new CalendarDB("duck");
 		System.out.println("created new CalendarDB");
 		for ( CalendarEntry entry : bar ) {
 			test.addEntry(entry);

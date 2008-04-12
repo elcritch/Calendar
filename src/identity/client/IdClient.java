@@ -77,7 +77,11 @@ public class IdClient
 		//client.printArgsHash();
 		
 		client.parseInput(args);
-		client.localCalDb= new CalendarDB(argsHash.get("-u"));
+		
+		if (argsHash.containsValue("cal")) {
+			client.localCalDb = new CalendarDB(argsHash.get("-u"));
+		}
+		
 		client.printArgsHash();
 		client.setServerName(host, port);
 		client.parse_switches(args, numinputs);
