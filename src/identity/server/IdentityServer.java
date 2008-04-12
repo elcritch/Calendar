@@ -315,21 +315,25 @@ public class IdentityServer implements IdentityUUID
 		return ipaddr;
 	}
 
-	public boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth) {
+	public boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth)
+			throws UserInfoException, RemoteException {
 		// TODO Auto-generated method stub
+		
 		return false;
 	}
 
-	public boolean deleteCalendarEntry(int seqNum, UserInfo auth) {
+	public boolean deleteCalendarEntry(CalendarEntry calEntry, UserInfo auth)
+			throws UserInfoException, RemoteException {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo,
-			UserInfo auth) {
+			UserInfo auth) throws UserInfoException, RemoteException {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	
 }
 
