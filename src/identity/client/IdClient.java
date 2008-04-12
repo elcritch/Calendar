@@ -570,7 +570,7 @@ public class IdClient
 						System.out.println("No Calendar Entries found");	
 					else
 					{
-					    System.out.println("Display: "+localEntries);
+					    System.out.println("Display: "+localEntries.length);
 						for (int i = 0; i < localEntries.length; ++i ) 
 						  System.out.println(localEntries[i]);
 					}
