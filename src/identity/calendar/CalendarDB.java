@@ -46,10 +46,11 @@ public class CalendarDB
 	public CalendarDB( )
 	{}
 
-	public CalendarDB( String filename )
+	public CalendarDB( String filename, UUID uid, String uname )
 	{
 		db = new ConcurrentHashMap<Integer, CalendarEntry>(50);
-
+		useruuid = uid;
+		username = uname;
 		// read in entries
 		parseFile(filename);
 
@@ -64,7 +65,7 @@ public class CalendarDB
 		dbFileName = filename;
 		String line;
 		String [] parts;
-
+		
 		BufferedReader dbStreamIn = null;
 		try {
 			// open file
@@ -91,9 +92,15 @@ public class CalendarDB
 
 			try {
 				while ( (line = dbStreamIn.readLine()) != null ) {
-					entry = CalendarEntry.parseStringArray(line.split("#"), isServer);
+					parts = line.split("#");
+					System.out.print("parts: "+parts.length+" vals:");
+					for (String a: parts)
+						System.out.print(" "+a);
+					System.out.println("");
+					System.out.println("Calling parseStringArray");
+					entry = CalendarEntry.parseStringArray(parts, isServer);
+					System.out.println("read: "+entry);
 					addEntry(entry);
-					System.out.println("create: " + entry);
 				}
 			}
 			catch (IllegalArgumentException e) {
@@ -123,13 +130,17 @@ public class CalendarDB
 	 * @param entry add this entry to the hashmap
 	 * @throws IllegalArgumentException
 	 */
-	public void addEntry(CalendarEntry entry) throws IllegalArgumentException
+	public boolean addEntry(CalendarEntry entry)
 	{
+		if (entry == null)
+			return false;
 		Integer key = entry.id;
-		if ( !db.containsKey(key))
+		if ( !db.containsKey(key)) {
 			db.put(key, entry);
+			return true;
+		} 
 		else
-			throw new IllegalArgumentException("Key already in database");
+			return false;
 	}
 
 	/**
@@ -140,6 +151,8 @@ public class CalendarDB
 	 */
 	public boolean delEntry(CalendarEntry entry)
 	{
+		if (entry == null)
+			return false;
 		return delEntry(entry.id);
 	}
 
@@ -185,8 +198,9 @@ public class CalendarDB
 		try {
 			dbFile.delete();
 			dbStreamOut = new BufferedWriter( new FileWriter(dbFile, false) );
-
-for (CalendarEntry entry : dumparray)
+			
+			dbStreamOut.write(""+useruuid+"#"+username+"#\n");
+			for (CalendarEntry entry : dumparray)
 				dbStreamOut.write(entry.toString() + "\n");
 
 			dbStreamOut.close();
@@ -218,9 +232,46 @@ for (CalendarEntry entry : dumparray)
 		Date datetime = CalendarEntry.getDF().parse(foodate);
 		System.out.println("datetime: " + datetime);
 		System.out.println("foo = " + CalendarEntry.getDF().format(datetime) );
-		// CalendarEntry bar = CalendarEntry(UUID uuid, int id, Date datetime, String status, String descr, int duration );
+		DateFormat df = CalendarEntry.getDF();
+		// 
+		int i = 0;
+		
+		CalendarEntry bar[] = new CalendarEntry[5]; 
+		
+		for(i=0;i<bar.length; ++i) {
+			bar[i] = new CalendarEntry( 
+					i*100, 
+					new Date(), 
+					(i%2==0) ? "public" : "private", 
+					"some thing", 
+					i*10 );
+			bar[i].privatizeDescr();
+			System.out.println("bar i:"+i+" :"+bar[i]);
+		}
+		
+		CalendarDB test = new CalendarDB("emptycalendar.cal",UUID.randomUUID(),"daffy");
+		System.out.println("created new CalendarDB");
+		for ( CalendarEntry entry : bar ) {
+			test.addEntry(entry);
+		}
+		test.writeFile();
+		
+		for ( CalendarEntry entry : test.db.values() ) {
+			System.out.println("dump: "+entry);
+		}
+		
+		System.out.println("del: "+test.delEntry(100));
+		System.out.println("del: "+test.delEntry(200));
+		System.out.println("del: "+test.delEntry(100));
 
 
+		for ( CalendarEntry entry : test.db.values() ) {
+			System.out.println("dump: "+entry);
+		}
+		
+		for ( CalendarEntry entry: test.toArray()) {
+			System.out.println("toArray: "+entry);
+		}
 		System.exit(0);
 	}
 

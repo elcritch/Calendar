@@ -73,6 +73,16 @@ public class CalendarEntry implements Serializable
 		this.duration = duration;
 		// need to check and make sure this is correct.
 	}
+	
+	public CalendarEntry(int id, Date datetime, String status, String descr, int duration ) {
+		this.uuid = null;
+		this.id = id;
+		this.datetime = datetime;
+		this.status = status;
+		this.descr = descr;
+		this.duration = duration;
+		// need to check and make sure this is correct.
+	}
 
 	public static CalendarEntry parseStringArray( String[] p, boolean hasUserId)
 	{
@@ -88,10 +98,10 @@ public class CalendarEntry implements Serializable
 			String status = p[i++];
 			String descr = p[i++];
 			int duration = Integer.parseInt(p[i++]);
-
 			return new CalendarEntry(uuid, id, datetime, status, descr, duration);
 		}
 		catch (Exception e) {
+			System.err.println("Error: "+e);
 			return null;
 		}
 
@@ -111,15 +121,15 @@ public class CalendarEntry implements Serializable
 	public String toString()
 	{
 		String str;
-		str = (uuid == null) ? null : uuid.toString() + "#";
+		str = (uuid == null) ? "" : uuid.toString() + "#";
 		str += id.toString() + "#";
-		str += datetime.toString() + "#";
+		str += getDF().format(datetime).toString() + "#";
 		str += status + "#";
 		str += descr.toString() + "#";
 		str += duration.toString() + "#";
 
 		return str;
 	}
-
+	
 }
 
