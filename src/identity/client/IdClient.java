@@ -170,8 +170,12 @@ public class IdClient
           + "--lookup <loginname> 	connects with the server and looks up the loginname and displays it.\n"
           + "--reverse-lookup <UUID> 	looks up the UUID and displays all information with that UUID.\n"
           + "--modify <oldloginname> <newloginname> --password <password> modify a given username\n"
-          + "--get users|uuids|all 	lists either the entire users,uuids or all information");
-
+          + "--get users|uuids|all 	lists either the entire users,uuids or all information\n"
+		  + "--new/-n cal -u <username> --password/-p  <password>  -t <time> -sl <public/private> -des <descrption> -du <duration> create a new calendar entry.\n"
+		  + "--del cal  -u <username> --password/-p <password> -s <sequence number> delete calendar entries for the given sequence number"
+		  + "--show/-s cal  -u <username> --password/-p <password>display the personal calendar entries\n. "
+		  + "--show/-s cal  -u <username> --password/-p <password> -rusr <remote user> -l <all/global> display the others calendar entries \n.");
+		
 		System.err.println("Usage: java IdClient <host> [<registry-port>] [--switch]");
 		if (mesg != null) {
 			System.err.println(mesg);
@@ -646,7 +650,7 @@ public class IdClient
 			for (int i=0;i<localCalDb.db.size();i++)
 			{
 				seqId[i] = Integer.parseInt((localCalDb.db.keySet().toArray())[i].toString());
-				
+				System.out.println("Sequence id list "+seqId[i]);
 			}
 			Arrays.sort(seqId);
 		
@@ -655,6 +659,7 @@ public class IdClient
 		}	
 		else
 			return 1;
+		
 	}
 	private void  printArgsHash()
 	{
