@@ -174,8 +174,8 @@ public class IdClient
           + "--modify <oldloginname> <newloginname> --password <password> modify a given username\n"
           + "--get users|uuids|all 	lists either the entire users,uuids or all information\n"
 		  + "--new/-n cal -u <username> --password/-p  <password>  -t <time> -sl <public/private> -des <descrption> -du <duration> create a new calendar entry.\n"
-		  + "--del cal  -u <username> --password/-p <password> -s <sequence number> delete calendar entries for the given sequence number"
-		  + "--show/-s cal  -u <username> --password/-p <password>display the personal calendar entries\n. "
+		  + "--del cal  -u <username> --password/-p <password> -s <sequence number> delete calendar entries for the given sequence number\n"
+		  + "--show/-s cal  -u <username> --password/-p <password>  display the personal calendar entries\n. "
 		  + "--show/-s cal  -u <username> --password/-p <password> -rusr <remote user> -l <all/global> display the others calendar entries \n.");
 		
 		System.err.println("Usage: java IdClient <host> [<registry-port>] [--switch]");
@@ -527,7 +527,7 @@ public class IdClient
 					System.out.println("Deleting Calendar entry failed");
 				}
 				else
-					System.out.println("No uuid ");
+					System.out.println("Username doesnot exist");
 				break;
 			case 7:
 				/*Dispaly other user's calendar entry*/
@@ -544,29 +544,39 @@ public class IdClient
 			    CalendarEntry[] entries = (CalendarEntry[]) userdb.displayCalendarEntries(modoptions, options, mode);
 				if(entries !=null)
 				{				
-					System.out.println("Display: ");
+					
 					if(entries.length==0)
 						System.out.println("No Calendar Entries found");
-					for (int i = 0; i < entries.length; ++i ) 
-						System.out.println(entries[i]);
+					else
+					{
+						System.out.println("Display: ");
+						for (int i = 0; i < entries.length; ++i ) 
+							System.out.println(entries[i]);						
+					}
+
 				}
 				else
 					System.out.println("UserName does not exists");
 				}
 				else
-					System.out.println("No uuid");
+					System.out.println("UserName does not exists");
 				break;
 			case 8:
 				/*Display personal calendar entry*/
 				CalendarEntry[] localEntries = (CalendarEntry[])localCalDb.toArray();
 				if(localEntries !=null)
 				{				
-					System.out.println("Display: ");
-					for (int i = 0; i < localEntries.length; ++i ) 
-						System.out.println(localEntries[i]);
+					if(localEntries.length==0)
+						System.out.println("No Calendar Entries found");	
+					else
+					{
+					    System.out.println("Display: ");
+						for (int i = 0; i < localEntries.length; ++i ) 
+						  System.out.println(localEntries[i]);
+					}
 				}			
 				else
-					System.out.println("No local entries");		
+					System.out.println("No Calendar entries found!");		
 				break;
 			default:
 				System.out.println("Invalid command.");
