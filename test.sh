@@ -75,9 +75,9 @@ java -classpath bin/ identity.client.IdClient localhost 5299 \
 
 echo -e "\n --del cal "	
 echo "=============================="
-echo "### delete 2nd entry "
+echo "### delete 1 entry "
 java -classpath bin/ identity.client.IdClient localhost 5299 \
-	--del cal -u $user-mod --password pass-$user -s 3
+	--del cal -u $user-mod --password pass-$user -s 1
 
 echo -e "\n --show cal"	
 echo "=============================="

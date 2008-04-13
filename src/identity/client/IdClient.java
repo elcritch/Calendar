@@ -577,6 +577,7 @@ public class IdClient
 					CalendarEntry localentry = calentry.copy();
 					calentry.privatizeDescr();
 					retval = userdb.deleteCalendarEntry(calentry, options);
+					
 					if (retval == true)
 					{
 						// Delete the entry to the local database

@@ -97,14 +97,17 @@ public class CalendarDBServer extends CalendarDB {
 		if (uuid == null || keyid == null ) 
 			throw new InvalidParameterException("cannot delete entry w");
 		ConcurrentHashMap<Integer, CalendarEntry> userdb;
-		
-		if ( (userdb = db.get(uuid)) == null )
+		CalendarEntry tmp;
+		userdb = db.get(uuid);
+		if ( userdb == null )
 			return false;
-		else {
-			if (userdb.remove(keyid)==null)
-				return false;
-			else return true;
+		else if ( (tmp = userdb.remove(keyid)) != null) {
+			System.out.println("DEBUG: CalendarEntry tmp "+tmp);
+			return false;
 		}
+		else 
+			return true;
+		
 	}
 	
 	@Override
