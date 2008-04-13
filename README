@@ -1,13 +1,42 @@
-Jaremy Creechley
-================
+Vamsi Nandanavanam & Jaremy Creechley
+====================================
 
-Identity Server
----------------
+DISTRIBUTED CALENDAR  : Part 1
+---------------------------
 
 # CS555 Spring 2008
-# Programming Assignment 2
+# Programming Assignment 3
 
 ## Description
+This project includes all the features of Distributed Calendar (part 1) like
+adding a calendar entry, deleting a calendar entry, checkpointing ,displaying
+personal/other user's calendar entries in addition to the functionality supported by the Identity Server.
+
+##Design
+Server:
+	The Distributed calendar server supports the basic functionality such
+	as adding an entry ,deleting an entry, dispalying the required user's
+	entries. All the calendar entries are stored in "CALENDAR" file and
+	it is checkpointed frequently. In order to create an entry in the
+	calendar file, requested user should be existing on the server
+	database. Calendar entries are stored in concurrent hash map using
+	UUID as key. This helps to have same Sequence Id / Event id for
+	differnet users.
+Client:
+	The distributed calendar client supports the basic features to test
+	the server's functionality. Apart from requesting the server for
+	calendar entries and deleting calendar entries,user can check his/her
+	local calendar entries which are stored in 'calendar_<username>.cal'
+	file. The above naming convention is used to make sure the file is
+	accessed by the respective users only.
+
+CalendarDB
+	Both the server and client uses the calendardb class ,which has the
+	conccurent hashmap implementation.It contains the methods to parse the
+	file and store the data into hashmap, write the data into file etc.
+
+
+
 
 Included is a basic tesh.sh with examples of how to run the code. The basic form is:
 	
@@ -32,6 +61,4 @@ to clean the project.
 The code is commented with javadoc. The basic structure is based on a pure server-client architecture.
 There are no callbacks from the client and errors are reported by throwing new UserInfoExceptions.
 
-The code for spinning of the checkpointing stuff works but is not very robust and I didn't
-quite finish the bit for closing out nicely. But it does what it is supposed to do.
 
