@@ -57,7 +57,6 @@ public class CalendarDB
 		username = uname;
 		// read in entries
 		String filename = "calendar" + "_"+uname+".cal";
-		System.out.println("debug: filename = "+filename);
 		parseFile(filename);
 
 		int delay = 7*1000; // delay for 5 sec.
@@ -210,11 +209,11 @@ public class CalendarDB
 		BufferedWriter dbStreamOut;
 		// dumpy hashmap into an array then write the array.
 		CalendarEntry[] dumparray = toArray();
+		// System.out.println("debug: Writing calendarDB file: "+dbFile);
 
 		try {
 			dbFile.delete();
 			dbStreamOut = new BufferedWriter( new FileWriter(dbFile, false) );
-
 			
 			for (CalendarEntry entry : dumparray)
 				dbStreamOut.write(entry.toString() + "\n");

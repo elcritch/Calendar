@@ -38,8 +38,8 @@ public class IdClient
 	public static Hashtable<String, String> argsHash = new Hashtable<String, String>();
 	public static void main(String[] args) throws Exception
 	{
-		String client_trust = "../resources/Client_Truststore";
-		String security_policy = "../resources/mysecurity.policy";
+		String client_trust = "./resources/Client_Truststore";
+		String security_policy = "./resources/mysecurity.policy";
 		File client_trust_file = new File(client_trust);
 		File security_policy_file = new File(security_policy);
 		
@@ -88,8 +88,14 @@ public class IdClient
 		client.setServerName(host, port);
 		client.parse_switches(args, numinputs);
 		client.perform();
-		client.localCalDb.writeFile();
-
+		System.out.println("Debug!");
+		if (client.localCalDb != null)
+			client.localCalDb.writeFile();
+		else
+			System.out.println("debug: error no localCalDb file");
+			
+		System.exit(0);
+		
 	}
 
 	/** 
@@ -487,7 +493,7 @@ public class IdClient
 				break;
 			case 5:
 				/*Create calendar entry*/
-				result =userdb.lookupUUID(options.username);
+				result = userdb.lookupUUID(options.username);
 				if(result!=null)
 				{
 					System.out.println("Received uuid "+result.uuid);
@@ -593,7 +599,7 @@ public class IdClient
 			System.err.println("Null Exception: " + e);
 			e.printStackTrace();			
 		}
-		System.exit(0);
+		// System.exit(0);
 	}
 	
 	private void parseInput(String[] ags)
@@ -657,16 +663,16 @@ public class IdClient
 		
 		if(!localCalDb.db.isEmpty())
 		{				
-			
-			int[] seqId = new int[localCalDb.db.size()];
-			for (int i=0;i<localCalDb.db.size();i++)
+			int dbsize = localCalDb.db.size();
+			int[] seqId = new int[dbsize];
+			for (int i=0;i<dbsize;i++)
 			{
 				seqId[i] = Integer.parseInt((localCalDb.db.keySet().toArray())[i].toString());
 				System.out.println("Sequence id list "+seqId[i]);
 			}
 			Arrays.sort(seqId);
 		
-			return seqId[localCalDb.db.size()] +1;
+			return seqId[seqId.length-1] +1;
 			 
 		}	
 		else
