@@ -36,7 +36,11 @@ CalendarDB
 	file and store the data into hashmap, write the data into file etc.
 
 
-
+Additional Features:
+	The client validates the entered time to check if it overlaps with the 
+	existing entries or not. If it overlaps, A warning message is printed.However
+	the calendar entry would be created.
+	
 
 Included is a basic tesh.sh with examples of how to run the code. The basic form is:
 	
