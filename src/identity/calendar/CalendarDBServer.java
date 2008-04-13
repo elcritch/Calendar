@@ -81,6 +81,8 @@ public class CalendarDBServer extends CalendarDB {
 	 */
 	@Override
 	public boolean delEntry(CalendarEntry entry) throws InvalidParameterException {
+		if (entry == null)
+			return false;
 		UUID uuid = entry.uuid;
 		Integer keyid = entry.id;
 		return delEntry(uuid, keyid);
@@ -99,9 +101,13 @@ public class CalendarDBServer extends CalendarDB {
 		ConcurrentHashMap<Integer, CalendarEntry> userdb;
 		CalendarEntry tmp;
 		userdb = db.get(uuid);
-		if ( userdb == null )
+		System.out.println("DEBUG: CalendarEntry uuid "+uuid);
+		System.out.println("DEBUG: CalendarEntry userdb "+userdb);
+		if ( userdb == null ) {
+			System.out.println("DEBUG: CalendarEntry userdb "+userdb);
 			return false;
-		else if ( (tmp = userdb.remove(keyid)) != null) {
+		}
+		else if ( (tmp = userdb.remove(keyid)) == null) {
 			System.out.println("DEBUG: CalendarEntry tmp "+tmp);
 			return false;
 		}
