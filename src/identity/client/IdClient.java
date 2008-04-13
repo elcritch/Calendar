@@ -11,6 +11,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
@@ -361,6 +362,8 @@ public class IdClient
 					Date datetime = CalendarEntry.getDF().parse(argsHash.get("-t"));
 					String status = argsHash.get("-sl");
 					int duration = Integer.parseInt(argsHash.get("-du"));
+					validateTime(datetime,duration);
+
 
 					user = argsHash.get("-u");
 					if (argsHash.containsKey("--password"))
@@ -738,5 +741,34 @@ public class IdClient
 		return "\nUUID: " + ((u.uuid == null) ? null : u.uuid) + "\nUsername: " + u.username + "\nReal Name: '" + u.realname + "'"
 		//+ "'\n(DEBUGGIN) passwd:" + u.md5passwd
 				+ "\n" + u.ipaddr + "\nDate Modified: " + u.lastdate;
+	}
+	
+	private boolean validateTime(Date datetime,int duration)
+	{
+		long entered_Start_Time  =  datetime.getTime();
+		long entered_dur_milliSec = duration *60*1000;
+		long entered_Stop_Time = entered_Start_Time + entered_dur_milliSec;
+		
+		if (!localCalDb.db.isEmpty())
+		{
+			//get the sequence numbers from caldb file
+				for(CalendarEntry entry : localCalDb.db.values())
+				{
+					
+					long file_Start_Time  =  entry.datetime.getTime();
+					long file_dur_milliSec = duration *60*1000;
+					long file_End_Time  =  file_Start_Time + file_dur_milliSec;
+					
+					if((entered_Start_Time < file_End_Time) && (entered_Start_Time > file_Start_Time) ||
+					   (entered_Stop_Time < file_End_Time) && (entered_Stop_Time > file_Start_Time))
+					{
+						System.out.println("Waring :Entered Time overlaps with existing entry !!!");
+						return false;
+					}
+					
+				}
+			}		
+		return true;
+	
 	}
 }
