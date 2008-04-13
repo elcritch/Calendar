@@ -394,7 +394,7 @@ public class IdentityServer implements IdentityUUID
 	public boolean deleteCalendarEntry(CalendarEntry calEntry, UserInfo auth)
 			throws UserInfoException, RemoteException {
 		// TODO Auto-generated method stub
-		boolean retval = true;
+		boolean retval = false;
 		// TODO Auto-generated method stub
 		UserInfo orig = authenitcate(auth);
 		
@@ -411,7 +411,9 @@ public class IdentityServer implements IdentityUUID
 		
 		retval = caldb.delEntry(calEntry);
 		
-		System.out.println("debug called addCalendarEntry: "+calEntry);
+//		System.out.println("");
+		
+		System.out.println("debug called delete entry: "+calEntry);
 		return retval;
 	}
 
