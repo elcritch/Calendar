@@ -378,7 +378,7 @@ public class IdClient
 						pass = argsHash.get("-p");
 
 					calentry = new CalendarEntry(null, null, datetime, status, argsHash.get("-des"), duration);
-					System.out.println("DEBUG: calentry = "+calentry);
+					// System.out.println("DEBUG: calentry = "+calentry);
 					type = 5;
 				}
 				else
@@ -542,12 +542,16 @@ public class IdClient
 				result = userdb.lookupUUID(options.username);
 				if (result != null)
 				{
+					int id = getNextSeqNum();
+					System.out.println("Sequence number is :" + id);
+					calentry.id = new Integer(id);
+					
 					validateTime(calentry.datetime,calentry.duration);
 					
 					options = options.setMd5passwd(password(options.md5passwd, result.uuid));
-					System.out.println("DEBUG: local = "+calentry);
+					// System.out.println("DEBUG: local = "+calentry);
 					CalendarEntry localEntry = calentry.copy();
-					System.out.println("DEBUG: local = "+localEntry);
+					// System.out.println("DEBUG: local = "+localEntry);
 					calentry.privatizeDescr();
 					retval = userdb.addCalendarEntry(calentry, options);
 					if (retval == true)
@@ -569,9 +573,6 @@ public class IdClient
 				{
 					
 					options = options.setMd5passwd(password(options.md5passwd, result.uuid));
-
-					int id = getNextSeqNum();
-					System.out.println("Sequence number is :" + id);
 					
 					CalendarEntry localentry = calentry.copy();
 					calentry.privatizeDescr();
