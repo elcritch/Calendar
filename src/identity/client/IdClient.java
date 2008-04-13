@@ -240,7 +240,7 @@ public class IdClient
 
 	/**
 	 * parse_switches parse the switches to know what commands to execute
-	 * 
+	 * new switches related to calendar are added.
 	 * @param args
 	 *            array of command line arguements
 	 * @param init
@@ -468,13 +468,14 @@ public class IdClient
 
 	/**
 	 * Runs code for the various switches. Must be called after parse_switches
+	 * new switches for parsing calendar files added.
 	 */
 	private void command_line()
 	{
 		// perform command line actions
 		UserInfo result = null;
 		boolean retval = false;
-		System.out.println("Running Command Line " + type);
+		//System.out.println("Running Command Line " + type);
 		// System.out.println("options: " + options + "\n");
 
 		try
@@ -647,15 +648,23 @@ public class IdClient
 		}
 		// System.exit(0);
 	}
-
+/**
+ *
+ * @param ags -- the arguments list passed.
+ * @return void
+ * This method takes the arguments passed and stores in the local hash map.
+ * arguments are stored as key value pairs. 
+ * For example, -u username would be stored in the hash map
+ * as key = --u and value = username
+ *  
+ */
 	private void parseInput(String[] ags)
 	{
 		int argCount = 0;
 		while (argCount < ags.length)
 		{
-
 			String key = null;
-
+			//See if the arguments start wih  -- or - ,store them as keys.
 			if (ags[argCount].startsWith("-") || ags[argCount].startsWith("--"))
 			{
 				key = ags[argCount];
@@ -664,7 +673,7 @@ public class IdClient
 				String value = "";
 				boolean stop = false;
 				int iloop = 0;
-				
+				//check for multi spaced values.
 				while (stop == false && argCount < ags.length)
 				{
 					iloop++;
@@ -672,8 +681,6 @@ public class IdClient
 						value = value + " " + ags[argCount];
 					else
 						value = value + ags[argCount];
-					// System.out.println("Value "+value);
-
 					argCount++;
 					if (argCount < ags.length)
 					{
@@ -683,42 +690,42 @@ public class IdClient
 					else
 						break;
 				}
+				//insert into hashmap
 				if (!argsHash.containsKey(key))
-				{
 					argsHash.put(key, value);
-				}
-			
-
 			}
 			else
 				argCount++;
-
 		}
-
 	}
-
+	/**
+	 *
+	 * @return int Next Sequence number
+	 * This method returns the next sequence number available from the 
+	 * calendar db file.
+	 */
 	private int getNextSeqNum()
 	{
-
+		//check if the local calendar db file is empty. if so return 1
 		if (!localCalDb.db.isEmpty())
 		{
 			int dbsize = localCalDb.db.size();
 			int[] seqId = new int[dbsize];
+			//get the sequence numbers from caldb file
 			for (int i = 0; i < dbsize; i++)
-			{
 				seqId[i] = Integer.parseInt((localCalDb.db.keySet().toArray())[i].toString());
-				
-			}
+			//sort the obtained list
 			Arrays.sort(seqId);
-
 			return seqId[seqId.length - 1] + 1;
-
 		}
 		else
 			return 1;
-
 	}
-
+	/**
+	 *
+	 * @return void
+	 * This method prints the given arguments which were collected in a hash map 
+	 */
 	private void printArgsHash()
 	{
 		System.out.println("Arguments Hash is : \n" + argsHash.toString());
