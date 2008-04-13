@@ -88,11 +88,9 @@ public class IdClient
 		client.setServerName(host, port);
 		client.parse_switches(args, numinputs);
 		client.perform();
-		System.out.println("Debug!");
+		// System.out.println("Debug!");
 		if (client.localCalDb != null)
 			client.localCalDb.writeFile();
-		else
-			System.out.println("debug: error no localCalDb file");
 			
 		System.exit(0);
 		
@@ -520,6 +518,9 @@ public class IdClient
 				{
 					System.out.println("Received uuid "+result.uuid);
 				options =options.setMd5passwd(password(options.md5passwd,result.uuid));
+				
+				//System.out.println("debug: calentry "+calentry);
+				//System.out.println("print!");
 				CalendarEntry localentry =calentry.copy();
 				calentry.privatizeDescr();			
 				retval =userdb.deleteCalendarEntry(calentry, options);

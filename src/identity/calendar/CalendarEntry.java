@@ -120,7 +120,9 @@ public class CalendarEntry implements Serializable
 
 	public void privatizeDescr()
 	{
-		if (status.toLowerCase().equals("private"))
+		if (status == null)
+			descr = "";
+		else if (status.toLowerCase().equals("private"))
 			descr = "";
 	}
 
