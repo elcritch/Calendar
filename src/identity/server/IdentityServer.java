@@ -416,9 +416,14 @@ public class IdentityServer implements IdentityUUID
 		
 		if (orig == null)
 			throw new UserInfoException("Cannot find given Username",2);
+		
+		UserInfo val = userDBwrapper.getUserName(newUserinfo.username);
+		if(val!=null)
+		{
+			
 			
 		ArrayList<CalendarEntry> tmp = new ArrayList<CalendarEntry>(200);
-		ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(orig.uuid);
+		ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(val.uuid);
 		for ( CalendarEntry entry : userhm.values() ) {
 			// check for modePublic and event is public
 			// or modePublic is not public (is false) then add
@@ -427,6 +432,9 @@ public class IdentityServer implements IdentityUUID
 		}
 			
 		return tmp.toArray(new CalendarEntry[0]);
+		}
+		else
+			return null;
 	
 	}
 
