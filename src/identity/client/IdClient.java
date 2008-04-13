@@ -759,8 +759,8 @@ public class IdClient
 					long file_dur_milliSec = duration *60*1000;
 					long file_End_Time  =  file_Start_Time + file_dur_milliSec;
 					
-					if((entered_Start_Time < file_End_Time) && (entered_Start_Time > file_Start_Time) ||
-					   (entered_Stop_Time < file_End_Time) && (entered_Stop_Time > file_Start_Time))
+					if((entered_Start_Time <= file_End_Time) && (entered_Start_Time >= file_Start_Time) ||
+					   (entered_Stop_Time <= file_End_Time) && (entered_Stop_Time >= file_Start_Time))
 					{
 						System.out.println("Waring :Entered Time overlaps with existing entry !!!");
 						return false;
