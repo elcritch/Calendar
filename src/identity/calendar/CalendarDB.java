@@ -91,7 +91,7 @@ public class CalendarDB
 			// Alright Java, is this elegant? Really, is it? Come on C does better than this!
 			dbStreamIn = new BufferedReader(new FileReader(dbFile));
 
-			System.out.println("reading Server file: "+isServer());
+			// System.out.println("reading Server file: "+isServer());
 
 			// add all the values to the HashMap
 			System.out.println("Recreating CalendarHash...");

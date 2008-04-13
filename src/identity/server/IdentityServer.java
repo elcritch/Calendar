@@ -211,7 +211,7 @@ public class IdentityServer implements IdentityUUID
 		if (!reqUserInfo.username.equals( orig.username))
 			throw new UserInfoException("Mismatch in username request and stored username",1);
 		if (!reqUserInfo.md5passwd.equals( orig.md5passwd))
-			throw new UserInfoException("Incorrect Password! (DEBUG) "+reqUserInfo.md5passwd+" orig: "+orig.md5passwd,0);
+			throw new UserInfoException("Incorrect Password!",0);
 		/*
 		 * 	public UserInfo(final UUID uuid, final String username, final String md5passwd, 
 				final String realname, final String ipaddr, final Date lastdate) 
@@ -246,7 +246,7 @@ public class IdentityServer implements IdentityUUID
 		if (orig == null)
 			throw new UserInfoException("Cannot find given Username",2);
 		if (!reqUserInfo.md5passwd.equals( orig.md5passwd))
-			throw new UserInfoException("Incorrect Password! (DEBUG) "+reqUserInfo.md5passwd+" orig: "+orig.md5passwd,0);
+			throw new UserInfoException("Incorrect Password!",0);
 		// now create new UserInfo with merged data.
 		UserInfo noveluser = new UserInfo(
 				orig.uuid,
@@ -348,7 +348,7 @@ public class IdentityServer implements IdentityUUID
 			throw new UserInfoException("No UserInfo found!",2);
 		
 		if (!serverauth.md5passwd.equals( auth.md5passwd))
-			throw new UserInfoException("Incorrect Password! (DEBUG) "+serverauth.md5passwd+" auth: "+auth.md5passwd,0);
+			throw new UserInfoException("Incorrect Password!",0);
 		else
 			return serverauth;
 	}
@@ -385,8 +385,8 @@ public class IdentityServer implements IdentityUUID
 		
 		caldb.addEntry(calEntry);
 		
-		System.out.println("SDEBUG: add calEntry: "+calEntry);
-		System.out.println("SDEBUG: db: "+caldb.getEntry(calEntry));
+		// System.out.println("SDEBUG: add calEntry: "+calEntry);
+		// System.out.println("SDEBUG: db: "+caldb.getEntry(calEntry));
 		
 		return retval;
 	}
@@ -413,7 +413,7 @@ public class IdentityServer implements IdentityUUID
 		
 //		System.out.println("");
 		
-		System.out.println("debug called delete entry: "+calEntry);
+		// System.out.println("debug called delete entry: "+calEntry);
 		return retval;
 	}
 
