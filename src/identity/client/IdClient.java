@@ -742,7 +742,14 @@ public class IdClient
 		//+ "'\n(DEBUGGIN) passwd:" + u.md5passwd
 				+ "\n" + u.ipaddr + "\nDate Modified: " + u.lastdate;
 	}
-	
+	/**
+	 * This method verifies the entered time overlaps with the existing
+	 * entries in the file
+	 * @param datetime
+	 * @param duration
+	 * @return boolean True if the entered time is not overlapping with the other entries
+	 * 				false if the entered time overlaps with the existing one.
+	 */
 	private boolean validateTime(Date datetime,int duration)
 	{
 		long entered_Start_Time  =  datetime.getTime();
@@ -751,7 +758,7 @@ public class IdClient
 		
 		if (!localCalDb.db.isEmpty())
 		{
-			//get the sequence numbers from caldb file
+			
 				for(CalendarEntry entry : localCalDb.db.values())
 				{
 					
@@ -762,7 +769,7 @@ public class IdClient
 					if((entered_Start_Time <= file_End_Time) && (entered_Start_Time >= file_Start_Time) ||
 					   (entered_Stop_Time <= file_End_Time) && (entered_Stop_Time >= file_Start_Time))
 					{
-						System.out.println("Waring :Entered Time overlaps with existing entry !!!");
+						System.out.println("Warning :Entered Time overlaps with existing entry !!!");
 						return false;
 					}
 					
