@@ -36,6 +36,8 @@ public class IdClient
 	public CalendarDB localCalDb;
 
 	private int type;
+
+	private String username;
 	public static Hashtable<String, String> argsHash = new Hashtable<String, String>();
 
 	public static void main(String[] args) throws Exception
@@ -83,10 +85,6 @@ public class IdClient
 
 		client.parseInput(args);
 
-		if (argsHash.containsValue("cal"))
-		{
-			client.localCalDb = new CalendarDB(argsHash.get("-u"));
-		}
 
 		//client.printArgsHash();
 		client.setServerName(host, port);
@@ -113,7 +111,15 @@ public class IdClient
 			System.out.println("RMI connection successful");
 
 			// invoke method on server object
+			username = argsHash.get("-u");
 
+			if (argsHash.containsValue("cal"))
+			{
+				UserInfo tmp = userdb.lookupUUID(username);
+				if (tmp==null)
+					throw new UserInfoException("Invalide username: "+username,0);
+				localCalDb = new CalendarDB(tmp.uuid);
+			}
 			// String result = userdb.sayHello();
 			// System.out.println("The response from the server is " + result);
 			command_line();
@@ -355,14 +361,14 @@ public class IdClient
 						System.out.println("Description too long ..trucating to 128 bytes");
 					// truncate cod comes here
 
-					int id = getNextSeqNum();
-					System.out.println("Sequence number is :" + id);
+					// int id = getNextSeqNum();
+					// System.out.println("Sequence number is :" + id);
 					// DateFormat df = CalendarEntry.getDF();
 					// SimpleDateFormat formatter= (SimpleDateFormat) df;
 					Date datetime = CalendarEntry.getDF().parse(argsHash.get("-t"));
 					String status = argsHash.get("-sl");
 					int duration = Integer.parseInt(argsHash.get("-du"));
-					validateTime(datetime,duration);
+					// validateTime(datetime,duration);
 
 
 					user = argsHash.get("-u");
@@ -371,8 +377,8 @@ public class IdClient
 					else
 						pass = argsHash.get("-p");
 
-					calentry = new CalendarEntry(null, id, datetime, status, argsHash.get("-des"), duration);
-
+					calentry = new CalendarEntry(null, null, datetime, status, argsHash.get("-des"), duration);
+					System.out.println("DEBUG: calentry = "+calentry);
 					type = 5;
 				}
 				else
@@ -502,17 +508,14 @@ public class IdClient
 				System.out.println("reverse lookup UUID: " + printUser(result));
 				break;
 			case 3:
-				System.out.println("Modify Options: " + modoptions);
+				// System.out.println("Modify Options: " + modoptions);
 				// retreive the user UUID for the given user id.
 				UUID userid = null;
-				try
-				{
-					userid = (userdb.lookupUUID(options.username)).uuid;
-				}
-				catch (NullPointerException e)
-				{
+				result = userdb.lookupUUID(options.username);
+				if (result == null)
 					throw new UserInfoException("Unknown Username: " + options.username, 1);
-				}
+				userid = result.uuid;
+				
 				options = options.setUUID(userid);
 				// hash the password and set it in the options.
 				options = options.setMd5passwd(password(options.md5passwd, options.uuid));
@@ -539,16 +542,19 @@ public class IdClient
 				result = userdb.lookupUUID(options.username);
 				if (result != null)
 				{
+					validateTime(calentry.datetime,calentry.duration);
 					
 					options = options.setMd5passwd(password(options.md5passwd, result.uuid));
+					System.out.println("DEBUG: local = "+calentry);
 					CalendarEntry localEntry = calentry.copy();
+					System.out.println("DEBUG: local = "+localEntry);
 					calentry.privatizeDescr();
 					retval = userdb.addCalendarEntry(calentry, options);
 					if (retval == true)
 					{
 						// Add the entry to the local database
-						System.out.println("Successfully created entry");
 						localCalDb.addEntry(localEntry);
+						System.out.println("Successfully created entry");
 					}
 					else
 						System.out.println("Adding Calendar entry failed");
@@ -557,15 +563,16 @@ public class IdClient
 					System.out.println("User name does not exists ! ");
 				break;
 			case 6:
-				/**/
+				/* Delete Entry */
 				result = userdb.lookupUUID(options.username);
 				if (result != null)
 				{
 					
 					options = options.setMd5passwd(password(options.md5passwd, result.uuid));
 
-					// System.out.println("debug: calentry "+calentry);
-					// System.out.println("print!");
+					int id = getNextSeqNum();
+					System.out.println("Sequence number is :" + id);
+					
 					CalendarEntry localentry = calentry.copy();
 					calentry.privatizeDescr();
 					retval = userdb.deleteCalendarEntry(calentry, options);

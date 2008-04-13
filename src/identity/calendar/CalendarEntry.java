@@ -63,7 +63,7 @@ public class CalendarEntry implements Serializable
 	 * @param 
 	 * @return 
 	 */
-	public CalendarEntry(UUID uuid, int id, Date datetime, String status, String descr, int duration )
+	public CalendarEntry(UUID uuid, Integer id, Date datetime, String status, String descr, int duration )
 	{
 		this.uuid = uuid;
 		this.id = id;
@@ -80,7 +80,7 @@ public class CalendarEntry implements Serializable
 		return copy;
 	}
 	
-	public CalendarEntry(int id, Date datetime, String status, String descr, int duration ) {
+	public CalendarEntry(Integer id, Date datetime, String status, String descr, int duration ) {
 		this.uuid = null;
 		this.id = id;
 		this.datetime = datetime;
@@ -131,7 +131,7 @@ public class CalendarEntry implements Serializable
 		String str;
 		str = (uuid == null) ? "" : uuid.toString() + "#";
 		str += id.toString() + "#";
-		str += getDF().format(datetime).toString() + "#";
+		str += (datetime == null ) ? "" : getDF().format(datetime).toString() + "#";
 		str += status + "#";
 		str += descr.toString() + "#";
 		str += duration.toString() + "#";
