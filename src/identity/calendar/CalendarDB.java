@@ -108,7 +108,7 @@ public class CalendarDB
 					//	System.out.print(" "+a);
 					//System.out.println("");
 					entry = CalendarEntry.parseStringArray(parts, isServer());
-					System.out.println("debug read: "+entry);
+					//System.out.println("debug read: "+entry);
 					addEntry(entry);
 				}
 			}
