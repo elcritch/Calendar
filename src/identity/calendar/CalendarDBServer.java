@@ -109,10 +109,14 @@ public class CalendarDBServer extends CalendarDB {
 	
 	@Override
 	public CalendarEntry getEntry(CalendarEntry entry) {
+		if (entry == null)
+			return null;
 		return getEntry(entry.uuid, entry.id);
 	}
 
 	public CalendarEntry getEntry(UUID uid, Integer key) {
+		if (key == null || uid == null)
+			return null;
 		return db.get(uid).get(key);
 	}
 	

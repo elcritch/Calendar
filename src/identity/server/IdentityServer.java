@@ -57,7 +57,7 @@ public class IdentityServer implements IdentityUUID
 		System.out.println("Creating new RMI agent!");
 		userDBwrapper = new UserInfoDataBase( "defaultUserInfo.db");
 		userdb = userDBwrapper.dbHash;
-		caldb = new CalendarDBServer("servercalendar.scal");
+		caldb = new CalendarDBServer("CALENDAR");
 		
 	}
 
@@ -251,7 +251,7 @@ public class IdentityServer implements IdentityUUID
 		UserInfo noveluser = new UserInfo(
 				orig.uuid,
 				(newUser.username == null) ? orig.username : newUser.username,
-				(newUser.md5passwd == null) ? orig.md5passwd : newUser.md5passwd,
+				orig.md5passwd,
 				(newUser.realname == null) ? orig.realname : newUser.realname,
 				ipaddr,
 				new Date()
@@ -348,7 +348,7 @@ public class IdentityServer implements IdentityUUID
 			throw new UserInfoException("No UserInfo found!",2);
 		
 		if (!serverauth.md5passwd.equals( auth.md5passwd))
-			throw new UserInfoException("Incorrect Password! (DEBUG) "+auth.md5passwd+" orig: "+auth.md5passwd,0);
+			throw new UserInfoException("Incorrect Password! (DEBUG) "+serverauth.md5passwd+" auth: "+auth.md5passwd,0);
 		else
 			return serverauth;
 	}
@@ -380,10 +380,14 @@ public class IdentityServer implements IdentityUUID
 		
 		if (calEntry.uuid == null)
 			calEntry.setUuid(orig.uuid);
+		if (calEntry.id == null)
+			throw new UserInfoException("Null ident",0);
 		
 		caldb.addEntry(calEntry);
 		
-		System.out.println("debug called addCalendarEntry: "+clientaddr());
+		System.out.println("SDEBUG: add calEntry: "+calEntry);
+		System.out.println("SDEBUG: db: "+caldb.getEntry(calEntry));
+		
 		return retval;
 	}
 
@@ -398,15 +402,16 @@ public class IdentityServer implements IdentityUUID
 		{
 			retval = false;
 			throw new UserInfoException("Cannot find given Username",2);
-			
 		}
 	
 		if (calEntry.uuid == null)
 			calEntry.setUuid(orig.uuid);
+		if (calEntry.id == null)
+			throw new UserInfoException("Null ident",0);
 		
-		caldb.delEntry(calEntry);
+		retval = caldb.delEntry(calEntry);
 		
-		System.out.println("debug called addCalendarEntry: "+clientaddr());
+		System.out.println("debug called addCalendarEntry: "+calEntry);
 		return retval;
 	}
 

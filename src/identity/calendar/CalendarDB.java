@@ -37,7 +37,6 @@ public class CalendarDB
 
 	public DateFormat datefmt;
 	public UUID useruuid;
-	public String username;
 
 	private String dbFileName;
 	private File dbFile;
@@ -51,12 +50,11 @@ public class CalendarDB
 	public CalendarDB( )
 	{}
 
-	public CalendarDB( String uname )
+	public CalendarDB( UUID uuid )
 	{
 		db = new ConcurrentHashMap<Integer, CalendarEntry>(50);
-		username = uname;
 		// read in entries
-		String filename = "calendar" + "_"+uname+".cal";
+		String filename = "calendar" + "_"+uuid+".cal";
 		parseFile(filename);
 
 		int delay = 7*1000; // delay for 5 sec.
@@ -96,7 +94,7 @@ public class CalendarDB
 			System.out.println("reading Server file: "+isServer());
 
 			// add all the values to the HashMap
-			System.out.println("\nRecreating CalendarHash");
+			System.out.println("Recreating CalendarHash...");
 			CalendarEntry entry;
 
 			try {
@@ -126,7 +124,7 @@ public class CalendarDB
 
 		}
 		catch (FileNotFoundException filenotfound) {
-			System.err.println("No File found. Oh Well, hope your users don't mind!");
+			System.err.println("No Calendar file found.");
 		}
 		catch (IOException ioe) {
 			System.err.println("Error in opening the db file: " + ioe);
@@ -144,11 +142,10 @@ public class CalendarDB
 	 */
 	public boolean addEntry(CalendarEntry entry)
 	{
-		if (entry == null)
+		if (entry == null || entry.id == null)
 			return false;
-		Integer key = entry.id;
-		if ( !db.containsKey(key)) {
-			db.put(key, entry);
+		if ( !db.containsKey(entry.id)) {
+			db.put(entry.id, entry);
 			return true;
 		} 
 		else
@@ -264,7 +261,7 @@ public class CalendarDB
 			System.out.println("bar i:"+i+" :"+bar[i]);
 		}
 		
-		CalendarDB test = new CalendarDB("duck");
+		CalendarDB test = new CalendarDB(bar[0].uuid);
 		System.out.println("created new CalendarDB");
 		for ( CalendarEntry entry : bar ) {
 			test.addEntry(entry);

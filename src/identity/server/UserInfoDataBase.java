@@ -51,7 +51,7 @@ public class UserInfoDataBase
 
 		}
 		catch (FileNotFoundException filenotfound) {
-			System.err.println("No File found. Oh Well, hope your users don't mind!");
+			System.err.println("No user database found.");
 		}
 		catch (IOException ioe) {
 			System.err.println("Error in opening the db file: " + ioe);
