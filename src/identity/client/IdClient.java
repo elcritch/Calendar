@@ -392,7 +392,10 @@ public class IdClient
 			/* delelte calendar entry */
 			else if (argsHash.containsKey("--del") || argsHash.containsKey("-d"))
 			{
-				if (argsHash.containsValue("cal") && argsHash.containsKey("-u") && (argsHash.containsKey("--password") || argsHash.containsKey("-p")) && argsHash.containsKey("-s"))
+				if ( argsHash.containsValue("cal") && 
+					  argsHash.containsKey("-u") && 	
+					  (argsHash.containsKey("--password") || argsHash.containsKey("-p")) && 
+					  argsHash.containsKey("-s") )
 				{
 
 					user = argsHash.get("-u");
@@ -413,9 +416,16 @@ public class IdClient
 			// switch 7
 			else if (argsHash.containsKey("--show") || argsHash.containsKey("-s"))
 			{
-				if (argsHash.containsKey("-rusr") && argsHash.containsKey("-u") && (argsHash.containsKey("--password") || argsHash.containsKey("-p")) && argsHash.containsKey("-l")
-						&& argsHash.containsValue("cal"))
+				if ( 
+					argsHash.containsKey("-rusr") && 
+					argsHash.containsKey("-u") && 
+					(argsHash.containsKey("--password") || argsHash.containsKey("-p")) &&
+					argsHash.containsKey("-l") && 
+					argsHash.containsValue("cal") 
+					)
 				{
+					System.out.println("Show calendar");
+					System.out.println("val = "+argsHash.get("-l"));
 					/* Display remote user's calendar entries */
 					user = argsHash.get("-u");
 					if (argsHash.containsKey("--password"))
@@ -427,8 +437,12 @@ public class IdClient
 
 					type = 7;
 				}
-				else if (argsHash.containsKey("-u") && argsHash.containsValue("cal") && (argsHash.containsKey("--password") || argsHash.containsKey("-p")))
+				else if ( 	argsHash.containsKey("-u") && 
+								argsHash.containsValue("cal") && 
+								(argsHash.containsKey("--password") || 
+								argsHash.containsKey("-p")))
 				{
+					System.out.println("Show calendar personal");
 					/* Display user's local calendar entries */
 					user = argsHash.get("-u");
 					if (argsHash.containsKey("--password"))
