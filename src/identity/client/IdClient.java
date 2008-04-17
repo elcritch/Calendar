@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,7 +41,9 @@ public class IdClient
 	private int type;
 
 	private String username;
-	public static Hashtable<String, String> argsHash = new Hashtable<String, String>();
+	public Hashtable<String, String> argsHash  ;
+	public Hashtable<String, String> alternates;
+	
 
 	public static void main(String[] args) throws Exception
 	{
@@ -256,7 +259,7 @@ public class IdClient
 	 *            beginning count of command line switches
 	 * @throws UserInfoException
 	 */
-	private void parse_switches(String[] argv, int init)
+		private void parse_switches(String[] argv, int init)
 	{
 		// args 0 host
 		// args 1 port
@@ -414,8 +417,10 @@ public class IdClient
 
 			}
 			// switch 7
+			/* show calendar entry */			
 			else if (argsHash.containsKey("--show") || argsHash.containsKey("-s"))
 			{
+				// show user info as requested from server
 				if ( 
 					argsHash.containsKey("-rusr") && 
 					argsHash.containsKey("-u") && 
@@ -436,11 +441,11 @@ public class IdClient
 					newuser = argsHash.get("-rusr");
 
 					type = 7;
-				}
-				else if ( 	argsHash.containsKey("-u") && 
+				} // show user info from local?
+				else if  ( 	argsHash.containsKey("-u") && 
 								argsHash.containsValue("cal") && 
-								(argsHash.containsKey("--password") || 
-								argsHash.containsKey("-p")))
+								(argsHash.containsKey("--password") || argsHash.containsKey("-p")) 
+							)
 				{
 					System.out.println("Show calendar personal");
 					/* Display user's local calendar entries */
@@ -456,15 +461,17 @@ public class IdClient
 					exit_message("Incorrect number of parameters to Display Calendar.");
 
 			}
-			else if (argsHash.containsKey("-rusr") && argsHash.containsKey("-u") &&
-					(argsHash.containsKey("--password") || argsHash.containsKey("-p"))
-					&& argsHash.containsValue("cal") && argsHash.containsKey("-start")
-					&& argsHash.containsKey("-end") &&
-					(argsHash.containsKey("--free") || argsHash.containsKey("-f")))
+			// switch 8
+			/* Display remote user's free entries */
+			else if (
+						argsHash.containsKey("-rusr") && 
+						argsHash.containsKey("-u") &&
+					  (argsHash.containsKey("--password") || argsHash.containsKey("-p")) && 
+						argsHash.containsKey("-start") && 
+						argsHash.containsKey("-end") &&
+					  (argsHash.containsKey("--free") || argsHash.containsKey("-f")) &&
+						argsHash.containsValue("cal") )
 			{
-				
-			
-					/* Display remote user's free entries */
 					user = argsHash.get("-u");
 					if (argsHash.containsKey("--password"))
 						pass = argsHash.get("--password");
@@ -476,17 +483,16 @@ public class IdClient
 					start_time = CalendarEntry.getDF().parse(argsHash.get("-start"));
 					stop_time = CalendarEntry.getDF().parse(argsHash.get("-end"));
 									
-					type = 9;
-							
+					type = 9;			
 			}
 			else
 			{
 				exit_message("Unknown switch: " + argv[init]);
 			}
-		}
-		catch (ArrayIndexOutOfBoundsException ne)
+		// end of else if statements
+		} catch (ArrayIndexOutOfBoundsException ne)
 		{
-			exit_message("Incorrect number of parameters to parse .");
+			exit_message("Incorrect number of parameters to parse: "+ne);
 		}
 		catch (UserInfoException e)
 		{
@@ -596,8 +602,7 @@ public class IdClient
 					calentry.privatizeDescr();
 					retval = userdb.addCalendarEntry(calentry, options);
 					if (retval == true)
-					{
-						// Add the entry to the local database
+					{// Add the entry to the local database
 						localCalDb.addEntry(localEntry);
 						System.out.println("Successfully created entry");
 					}
@@ -663,53 +668,51 @@ public class IdClient
 				else
 					System.out.println("UserName does not exists");
 				break;
+				
 			case 8:
 				/* Display personal calendar entry */
 				CalendarEntry[] localEntries = (CalendarEntry[]) localCalDb.toArray();
-				if (localEntries != null)
-				{
+				if (localEntries != null) {
 					if (localEntries.length == 0)
 						System.out.println("No Calendar Entries found");
-					else
-					{
+					else {
 						System.out.println("Calendar Entries: ");
 						for (int i = 0; i < localEntries.length; i++)
 							System.out.println(localEntries[i]);
 					}
 				}
-				else
+				else {
 					System.out.println("No Calendar entries found!");
+				}
 				break;
+				
 			case 9:
 				/* Dispaly other user's calendar entry */
 				
 				result = userdb.lookupUUID(options.username);
-				if (result != null)
-				{
+				if (result == null)
+					throw new UserInfoException("incorrect authentication",0);
+				options = options.setMd5passwd(password(options.md5passwd, result.uuid));
+				
+				long sDate = start_time.getTime();
+				long eDate = stop_time.getTime();
+				
+				ArrayList<Date> list = 
+						(ArrayList<Date>) userdb.getFreeTimeSlots(modoptions,options, sDate, eDate);
+						
+				if (list == null)
+					throw new UserInfoException("UserName does not exists",0);
 					
-					options = options.setMd5passwd(password(options.md5passwd, result.uuid));
-					long sDate =start_time.getTime();
-					long eDate =stop_time.getTime();
-				    ArrayList<Date> list = (ArrayList<Date>) userdb.getFreeTimeSlots(modoptions,options, sDate, eDate);
-					if (list != null)
-					{
-
-						if (list.size()== 0)
-							System.out.println("No Appointments marked for the given Range");
-						else
-						{
-							System.out.println("Free Time Slots of 1hr duration: ");
-							System.out.println(list.toString());
-						}
-
-					}
-					else
-						System.out.println("UserName does not exists");
+				if (list.size()== 0)
+					System.out.println("No Appointments marked for the given Range");
+				else {
+					System.out.println("Free Time Slots of 1hr duration: ");
+					System.out.println(list.toString());
 				}
-				else
-					System.out.println("UserName does not exists");
-					
+				
 				break;
+				
+			// default case, in the event that command is unknown
 			default:
 				System.out.println("Invalid command.");
 			}
@@ -739,11 +742,15 @@ public class IdClient
  * arguments are stored as key value pairs. 
  * For example, -u username would be stored in the hash map
  * as key = --u and value = username
+ * @throws UserInfoException 
  *  
  */
-	private void parseInput(String[] ags)
+	private void parseInput(String[] ags) throws UserInfoException
 	{
-		int argCount = 0;
+		int argCount = 0
+		argsHash = new Hashtable<String, String>(30);  
+		alternates = new Hashtable<String, String>(30);
+		
 		while (argCount < ags.length)
 		{
 			String key = null;
@@ -780,7 +787,56 @@ public class IdClient
 			else
 				argCount++;
 		}
+		
+		alternates.put("--create",          "-c"  );
+		alternates.put("--login",           "-l"  );
+		alternates.put( "--reverse-lookup", "-rl"  );
+		alternates.put("--modify",          "-m"  );
+		alternates.put("--get",             "-g"  );
+		alternates.put("--delete",          "-d"  );
+		alternates.put("--show",            "-s"  );
+
+		alternates.put("--password",        "-p"  );
+		alternates.put("--username",        "-u"  );
+
+		alternates.put("--new",             "-n"  );
+		alternates.put("--description",     "-d"  );
+		alternates.put("--time",            "-t"  );
+		alternates.put("--list",            "-l"  );
+
+		alternates.put("--duration"   , "-du"   );
+		alternates.put("--sequenceid" , "-id"   );
+		alternates.put( "--remoteuser", "-rusr" );
+		
+		alternates.put("--free", 	"--free"	);
+		alternates.put("--start", 	"-st"		);
+		alternates.put("--end", 	"-et"	   );
+		
+		// loop through the arguement hash list and put in the shortened form into the database
+		for (String key : alternates.keySet().toArray(new String[0])) {
+			if (argsHash.containsKey(key)) {
+				// put the value in the argsHash, delete it then check return value
+				String tmp = argsHash.put( alternates.get(key), argsHash.get(key));
+				argsHash.remove(key);
+				if (tmp != null)
+					throw new UserInfoException("Long user options overlap each other "+tmp,0);
+			}
+		}
+		
 	}
+	
+	private boolean checkArgs(String... checkargs) {
+		boolean result = true;
+		for (String arg : checkargs) {
+			if (!argsHash.containsKey(arg)) {
+				System.out.println("Incorrect Usage. Missing argument: "+arg);				
+				result = false;
+			}
+		}
+		
+		return result;
+	}
+	
 	/**
 	 *
 	 * @return int Next Sequence number
