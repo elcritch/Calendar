@@ -8,6 +8,7 @@ import java.rmi.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +35,8 @@ public class IdClient
 	private UserInfo options, modoptions;
 	public CalendarEntry calentry;
 	public CalendarDB localCalDb;
-
+	public static Date start_time =null;
+	public static Date stop_time =null;
 	private int type;
 
 	private String username;
@@ -265,6 +267,7 @@ public class IdClient
 		String pass = null;
 		String newuser = null;
 		UUID uuid = null;
+
 		type = -1;
 		// –c, –l, –r, –m and –g.
 		try
@@ -439,6 +442,29 @@ public class IdClient
 					exit_message("Incorrect number of parameters to Display Calendar.");
 
 			}
+			else if (argsHash.containsKey("-rusr") && argsHash.containsKey("-u") &&
+					(argsHash.containsKey("--password") || argsHash.containsKey("-p"))
+					&& argsHash.containsValue("cal") && argsHash.containsKey("-start")
+					&& argsHash.containsKey("-end") &&
+					(argsHash.containsKey("--free") || argsHash.containsKey("-f")))
+			{
+				
+			
+					/* Display remote user's free entries */
+					user = argsHash.get("-u");
+					if (argsHash.containsKey("--password"))
+						pass = argsHash.get("--password");
+					else
+						pass = argsHash.get("-p");
+
+					newuser = argsHash.get("-rusr");
+					
+					start_time = CalendarEntry.getDF().parse(argsHash.get("-start"));
+					stop_time = CalendarEntry.getDF().parse(argsHash.get("-end"));
+									
+					type = 9;
+							
+			}
 			else
 			{
 				exit_message("Unknown switch: " + argv[init]);
@@ -478,8 +504,9 @@ public class IdClient
 	/**
 	 * Runs code for the various switches. Must be called after parse_switches
 	 * new switches for parsing calendar files added.
+	 * @throws ParseException 
 	 */
-	private void command_line()
+	private void command_line() throws ParseException
 	{
 		// perform command line actions
 		UserInfo result = null;
@@ -638,6 +665,36 @@ public class IdClient
 				}
 				else
 					System.out.println("No Calendar entries found!");
+				break;
+			case 9:
+				/* Dispaly other user's calendar entry */
+				
+				result = userdb.lookupUUID(options.username);
+				if (result != null)
+				{
+					
+					options = options.setMd5passwd(password(options.md5passwd, result.uuid));
+					long sDate =start_time.getTime();
+					long eDate =stop_time.getTime();
+				    ArrayList<Date> list = (ArrayList<Date>) userdb.getFreeTimeSlots(modoptions,options, sDate, eDate);
+					if (list != null)
+					{
+
+						if (list.size()== 0)
+							System.out.println("No Appointments marked for the given Range");
+						else
+						{
+							System.out.println("Free Time Slots of 1hr duration: ");
+							System.out.println(list.toString());
+						}
+
+					}
+					else
+						System.out.println("UserName does not exists");
+				}
+				else
+					System.out.println("UserName does not exists");
+					
 				break;
 			default:
 				System.out.println("Invalid command.");

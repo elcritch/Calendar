@@ -4,6 +4,10 @@
 package identity.server;
 import identity.calendar.*;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -38,5 +42,7 @@ public interface IdentityUUID extends Remote {
    boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth) throws UserInfoException,java.rmi.RemoteException;
    boolean deleteCalendarEntry(CalendarEntry calEntry, UserInfo auth) throws UserInfoException,java.rmi.RemoteException;
    CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo,UserInfo auth,boolean mode) throws UserInfoException,java.rmi.RemoteException;
-
+   ArrayList<Date> getFreeTimeSlots(UserInfo newUserinfo, UserInfo auth,
+			long req_Start_time,long req_Stop_time) 
+			throws UserInfoException, RemoteException, ParseException;
 }
