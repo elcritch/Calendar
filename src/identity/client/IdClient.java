@@ -116,7 +116,7 @@ public class IdClient
 			System.out.println("RMI connection successful");
 
 			// invoke method on server object
-			username = argsHash.get("-u");
+			username = getArg("-u");
 
 			if (argsHash.containsValue("cal"))
 			{
@@ -272,217 +272,127 @@ public class IdClient
 		UUID uuid = null;
 
 		type = -1;
-		// –c, –l, –r, –m and –g.
 		try
 		{
 			// switch 0
-			if (argv[init].equals("--create") || argv[init].equals("-c"))
+			if (checkArgs("-c","-u","-p"))
 			{
-				init++;
-				if (argv[init].startsWith("-"))
-					exit_message("Too many switches");
-				if (argv[init].length() > 32)
-					throw new UserInfoException("Username too long", 1);
-				user = argv[init++];
+				user = getArg("-u");				
 				// now check for real name
-				for (int i = 0; i < 6 && !(argv[init].startsWith("--")); i++)
-					real = real + argv[init++];
-				// get password
-				if (argv[init].equals("--password"))
-					// pass = password(argv[++init]);
-					pass = argv[++init];
-				else
-					exit_message("create switch must use --create <loginname> [<real name>] [--password <password>] ");
+				String [] split = user.split("\\s+",1);
+				if (split.length == 2) {
+					user = split[0];
+					real = split[1];
+				}
+				if (user.length() > 32)
+					throw new UserInfoException("Username too long", 1);				
+				
+				pass = getArg("-p");
 				type = 0;
 			}
 			// switch 1
-			else if (argv[init].equals("--lookup") || argv[init].equals("-l"))
+			else if (checkArgs("-l"))
 			{
-				init++;
-				// --lookup <loginname>
-				if (argv[init].startsWith("-"))
-					exit_message("Too many switches");
-				user = argv[init];
+				user = getArg("-u");
 				type = 1;
 			}
 			// switch 2
-			else if (argv[init].equals("--reverse-lookup") || argv[init].equals("-r"))
+			else if (checkArgs("-r"))
 			{
-				init++;
-				// --reverse-lookup <UUID>
-				if (argv[init].startsWith("-"))
-					exit_message("Too many switches");
-				uuid = UUID.fromString(argv[init]);
+				uuid = UUID.fromString(getArg("-r"));
 				type = 2;
 			}
 			// switch 3
-			else if (argv[init].equals("--modify") || argv[init].equals("-m"))
+			else if (checkArgs("-m","-p"))
 			{
-				init++;
-				// --modify <oldloginname> <newloginname> [--password
-				// <password>]
-				// get username
-				if (argv[init].startsWith("-"))
-					exit_message("Too many switches");
-				if (argv[init].length() > 32)
-					throw new UserInfoException("Username too long", 1);
-				user = argv[init++];
-				// get newusername
-				if (argv[init].startsWith("-"))
-					exit_message("Too many switches");
-				if (argv[init].length() > 32)
-					throw new UserInfoException("Username too long", 1);
-				newuser = argv[init++];
+				// --modify <oldloginname> <newloginname> [--password <password>]
+				String [] split = getArg("-m").split("\\s+",1);
+				if (split.length == 2) {
+					user = split[0];
+					newuser = split[1];
+				} else throw new UserInfoException("Modify option is incorrect: "+getArg("-m"), 1);				
+					
+				if (newuser.length() > 32 || user.length() > 32)
+					throw new UserInfoException("Username too long", 1);				
 
-				// get password
-				if (argv[init].equals("--password"))
-					// pass = password(argv[++init]);
-					pass = argv[++init]; // don't hash password quite yet
-				else
-					exit_message("create switch must use --create <loginname> [<real name>] [--password <password>] ");
+				pass = getArg("-p");
 				type = 3;
 			}
 			// switch 4
-			else if (argv[init].equals("--get") || argv[init].equals("-g"))
+			else if (checkArgs("-g"))
 			{
-				init++;
+
 				// --get users|uuids|all
-				if (argv[init].startsWith("-"))
-					exit_message("Too many switches");
-				get = argv[init]; // just using extra var
+				get = getArg("-g");
 				user = get;
 				if (!(get.equals("users") || get.equals("uuids") || get.equals("all")))
-					exit_message("Incorrect --get request ");
+					exit_message("Incorrect \"get\" request ");
 				type = 4;
 			}
 			// switch 5
 			/* new calendar entry */
-			else if (argsHash.containsKey("--new") || argsHash.containsKey("-n"))
+			else if (checkArgs("-n","-u","-p","-t","-sl","-des","-du"))
 			{
+				if (getArg("-des").length() > 128)
+					System.out.println("Description too long ..trucating to 128 bytes");
 
-				if (argsHash.containsValue("cal") && argsHash.containsKey("-u") && (argsHash.containsKey("--password") || argsHash.containsKey("-p")) && argsHash.containsKey("-t")
-						&& argsHash.containsKey("-sl") && argsHash.containsKey("-des") && argsHash.containsKey("-du"))
-				{
-					if (argsHash.get("-des").length() > 128)
-						System.out.println("Description too long ..trucating to 128 bytes");
-					// truncate cod comes here
+				Date datetime = CalendarEntry.getDF().parse(getArg("-t"));
+				String status = getArg("-sl");
+				int duration = Integer.parseInt(getArg("-du"));
 
-					// int id = getNextSeqNum();
-					// System.out.println("Sequence number is :" + id);
-					// DateFormat df = CalendarEntry.getDF();
-					// SimpleDateFormat formatter= (SimpleDateFormat) df;
-					Date datetime = CalendarEntry.getDF().parse(argsHash.get("-t"));
-					String status = argsHash.get("-sl");
-					int duration = Integer.parseInt(argsHash.get("-du"));
-					// validateTime(datetime,duration);
+				user = getArg("-u");
+				pass = getArg("-p");
 
-
-					user = argsHash.get("-u");
-					if (argsHash.containsKey("--password"))
-						pass = argsHash.get("--password");
-					else
-						pass = argsHash.get("-p");
-
-					calentry = new CalendarEntry(null, null, datetime, status, argsHash.get("-des"), duration);
-					// System.out.println("DEBUG: calentry = "+calentry);
-					type = 5;
-				}
-				else
-					exit_message("Incorrect number of parameters to create calendar entry");
-
+				calentry = new CalendarEntry(null, null, datetime, status, getArg("-des"), duration);
+				type = 5;
 			}
 			// switch 6
 			/* delelte calendar entry */
-			else if (argsHash.containsKey("--del") || argsHash.containsKey("-d"))
+			else if (checkArgs("-d","-u","-p","-s")
 			{
-				if ( argsHash.containsValue("cal") && 
-					  argsHash.containsKey("-u") && 	
-					  (argsHash.containsKey("--password") || argsHash.containsKey("-p")) && 
-					  argsHash.containsKey("-s") )
-				{
+				user = getArg("-u");
+				pass = getArg("-p");
 
-					user = argsHash.get("-u");
-					if (argsHash.containsKey("--password"))
-						pass = argsHash.get("--password");
-					else
-						pass = argsHash.get("-p");
+				int id = Integer.parseInt(getArg("-s"));
+				calentry = new CalendarEntry(null, id, null, null, null, 0);
 
-					int id = Integer.parseInt(argsHash.get("-s"));
-					calentry = new CalendarEntry(null, id, null, null, null, 0);
-
-					type = 6;
-				}
-				else
-					exit_message("Incorrect number of parameters to Delete Calendar entry.");
-
+				type = 6;
 			}
 			// switch 7
 			/* show calendar entry */			
-			else if (argsHash.containsKey("--show") || argsHash.containsKey("-s"))
+			else if (checkArgs("-s","-u","-p","-l,","-rusr"))
 			{
 				// show user info as requested from server
-				if ( 
-					argsHash.containsKey("-rusr") && 
-					argsHash.containsKey("-u") && 
-					(argsHash.containsKey("--password") || argsHash.containsKey("-p")) &&
-					argsHash.containsKey("-l") && 
-					argsHash.containsValue("cal") 
-					)
-				{
 					System.out.println("Show calendar");
-					System.out.println("val = "+argsHash.get("-l"));
+					System.out.println("val = "+getArg("-l"));
 					/* Display remote user's calendar entries */
-					user = argsHash.get("-u");
-					if (argsHash.containsKey("--password"))
-						pass = argsHash.get("--password");
-					else
-						pass = argsHash.get("-p");
-
-					newuser = argsHash.get("-rusr");
-
-					type = 7;
-				} // show user info from local?
-				else if  ( 	argsHash.containsKey("-u") && 
-								argsHash.containsValue("cal") && 
-								(argsHash.containsKey("--password") || argsHash.containsKey("-p")) 
-							)
-				{
-					System.out.println("Show calendar personal");
-					/* Display user's local calendar entries */
-					user = argsHash.get("-u");
-					if (argsHash.containsKey("--password"))
-						pass = argsHash.get("--password");
-					else
-						pass = argsHash.get("-p");
-
-					type = 8;
-				}
-				else
-					exit_message("Incorrect number of parameters to Display Calendar.");
-
-			}
-			// switch 8
-			/* Display remote user's free entries */
-			else if (
-						argsHash.containsKey("-rusr") && 
-						argsHash.containsKey("-u") &&
-					  (argsHash.containsKey("--password") || argsHash.containsKey("-p")) && 
-						argsHash.containsKey("-start") && 
-						argsHash.containsKey("-end") &&
-					  (argsHash.containsKey("--free") || argsHash.containsKey("-f")) &&
-						argsHash.containsValue("cal") )
-			{
-					user = argsHash.get("-u");
-					if (argsHash.containsKey("--password"))
-						pass = argsHash.get("--password");
-					else
-						pass = argsHash.get("-p");
-
-					newuser = argsHash.get("-rusr");
+					user = getArg("-u");
+					pass = getArg("-p");
+					newuser = getArg("-rusr");
 					
-					start_time = CalendarEntry.getDF().parse(argsHash.get("-start"));
-					stop_time = CalendarEntry.getDF().parse(argsHash.get("-end"));
-									
+					type = 7;
+			} // show user info from local?
+			else if  (checkArgs("-s","-u","-p","-l,","-rusr") 	) 
+			{
+				System.out.println("Show calendar personal");
+				/* Display user's local calendar entries */
+				user = getArg("-u");
+				pass = getArg("-p");
+
+				type = 8;
+			}
+			
+			// switch 8
+			/* Display remote user's free entries */					
+			else if  (checkArgs("-free","-u","-p","-l,","-rusr","-st","-et",) 	) 
+			{
+					user = getArg("-u");
+					pass = getArg("-p");
+					newuser = getArg("-rusr");
+					
+					start_time = CalendarEntry.getDF().parse(getArg("-st"));
+					stop_time = CalendarEntry.getDF().parse(getArg("-et"));
+					
 					type = 9;			
 			}
 			else
@@ -509,7 +419,7 @@ public class IdClient
 			System.out.println("STE1: " + st[1]);
 
 		}
-		real = (real.equals("")) ? System.getProperty("user.name") : real;
+		real = (real == null || real.equals("")) ? System.getProperty("user.name") : real;
 		// now create option and modoption
 		options = new UserInfo(uuid, user, pass, real, null, null);
 		modoptions = new UserInfo(uuid, newuser, pass, real, null, null);
@@ -531,8 +441,8 @@ public class IdClient
 		// perform command line actions
 		UserInfo result = null;
 		boolean retval = false;
-		//System.out.println("Running Command Line " + type);
-		// System.out.println("options: " + options + "\n");
+		System.out.println("Running Command Line " + type);
+		System.out.println("options: " + options + "\n");
 
 		try
 		{
@@ -640,58 +550,50 @@ public class IdClient
 				/* Dispaly other user's calendar entry */
 				boolean mode = true;
 				result = userdb.lookupUUID(options.username);
-				if (result != null)
-				{
-					
-					options = options.setMd5passwd(password(options.md5passwd, result.uuid));
+				if (result == null)
+					throw new UserInfoException("UserName does not exists",1);
+		
+				options = options.setMd5passwd(password(options.md5passwd, result.uuid));
 
-					if (argsHash.get("-l").equalsIgnoreCase("all"))
-						mode = false;
+				if (getArg("-l").equalsIgnoreCase("all"))
+					mode = false;
 
-					CalendarEntry[] entries = (CalendarEntry[]) userdb.displayCalendarEntries(modoptions, options, mode);
-					if (entries != null)
-					{
-
-						if (entries.length == 0)
-							System.out.println("No Calendar Entries found");
-						else
-						{
-							System.out.println("Calendar Entries: ");
-							for (int i = 0; i < entries.length; ++i)
-								System.out.println(entries[i]);
-						}
-
-					}
-					else
-						System.out.println("UserName does not exists");
-				}
-				else
+				CalendarEntry[] entries = 
+					(CalendarEntry[]) userdb.displayCalendarEntries(modoptions, options, mode);
+				if (entries == null)
 					System.out.println("UserName does not exists");
+				
+				if (entries.length == 0) {
+					System.out.println("No Calendar Entries found");
+				} else {
+					System.out.println("Calendar Entries: ");
+					for (int i = 0; i < entries.length; ++i)
+						System.out.println(entries[i]);
+				}
+
 				break;
 				
 			case 8:
 				/* Display personal calendar entry */
 				CalendarEntry[] localEntries = (CalendarEntry[]) localCalDb.toArray();
-				if (localEntries != null) {
-					if (localEntries.length == 0)
-						System.out.println("No Calendar Entries found");
-					else {
-						System.out.println("Calendar Entries: ");
-						for (int i = 0; i < localEntries.length; i++)
-							System.out.println(localEntries[i]);
-					}
-				}
+				if (localEntries == null) 
+					throw new UserInfoException("No Calendar entries found!",1);
+			
+				if (localEntries.length == 0)
+					System.out.println("No Calendar Entries found");
 				else {
-					System.out.println("No Calendar entries found!");
+					System.out.println("Calendar Entries: ");
+					for (int i = 0; i < localEntries.length; i++)
+						System.out.println(localEntries[i]);
 				}
 				break;
 				
 			case 9:
 				/* Dispaly other user's calendar entry */
-				
 				result = userdb.lookupUUID(options.username);
 				if (result == null)
 					throw new UserInfoException("incorrect authentication",0);
+					
 				options = options.setMd5passwd(password(options.md5passwd, result.uuid));
 				
 				long sDate = start_time.getTime();
@@ -704,12 +606,11 @@ public class IdClient
 					throw new UserInfoException("UserName does not exists",0);
 					
 				if (list.size()== 0)
-					System.out.println("No Appointments marked for the given Range");
+					System.out.println("No available appointments for the given Range");
 				else {
 					System.out.println("Free Time Slots of 1hr duration: ");
 					System.out.println(list.toString());
 				}
-				
 				break;
 				
 			// default case, in the event that command is unknown
@@ -724,30 +625,30 @@ public class IdClient
 		}
 		catch (UserInfoException e)
 		{
-			System.err.println("Remote UserInfo Error: " + e);
-			// e.printStackTrace();
+			e.printStackTrace();
+			System.err.println("Remote UserInfo Error: \n" + e);
 		}
 		catch (java.lang.NullPointerException e)
 		{
 			System.err.println("Null Exception: " + e);
 			e.printStackTrace();
 		}
-		// System.exit(0);
 	}
-/**
- *
- * @param ags -- the arguments list passed.
- * @return void
- * This method takes the arguments passed and stores in the local hash map.
- * arguments are stored as key value pairs. 
- * For example, -u username would be stored in the hash map
- * as key = --u and value = username
- * @throws UserInfoException 
- *  
- */
+	
+	/**
+	 *
+	 * @param ags -- the arguments list passed.
+	 * @return void
+	 * This method takes the arguments passed and stores in the local hash map.
+	 * arguments are stored as key value pairs. 
+	 * For example, -u username would be stored in the hash map
+	 * as key = --u and value = username
+	 * @throws UserInfoException 
+	 *  
+	 */
 	private void parseInput(String[] ags) throws UserInfoException
 	{
-		int argCount = 0
+		int argCount = 0;
 		argsHash = new Hashtable<String, String>(30);  
 		alternates = new Hashtable<String, String>(30);
 		
@@ -790,7 +691,7 @@ public class IdClient
 		
 		alternates.put("--create",          "-c"  );
 		alternates.put("--login",           "-l"  );
-		alternates.put( "--reverse-lookup", "-rl"  );
+		alternates.put( "--reverse-lookup", "-r"  );
 		alternates.put("--modify",          "-m"  );
 		alternates.put("--get",             "-g"  );
 		alternates.put("--delete",          "-d"  );
@@ -800,7 +701,7 @@ public class IdClient
 		alternates.put("--username",        "-u"  );
 
 		alternates.put("--new",             "-n"  );
-		alternates.put("--description",     "-d"  );
+		alternates.put("--description",     "-des"  );
 		alternates.put("--time",            "-t"  );
 		alternates.put("--list",            "-l"  );
 
@@ -808,21 +709,37 @@ public class IdClient
 		alternates.put("--sequenceid" , "-id"   );
 		alternates.put( "--remoteuser", "-rusr" );
 		
-		alternates.put("--free", 	"--free"	);
+		alternates.put("--free", 	"-free"	);
 		alternates.put("--start", 	"-st"		);
 		alternates.put("--end", 	"-et"	   );
+		alternates.put("--status", 	"-sl"	   );
+
 		
 		// loop through the arguement hash list and put in the shortened form into the database
 		for (String key : alternates.keySet().toArray(new String[0])) {
 			if (argsHash.containsKey(key)) {
 				// put the value in the argsHash, delete it then check return value
-				String tmp = argsHash.put( alternates.get(key), argsHash.get(key));
+				String tmp = argsHash.put( alternates.get(key), getArg(key));
 				argsHash.remove(key);
 				if (tmp != null)
 					throw new UserInfoException("Long user options overlap each other "+tmp,0);
 			}
 		}
 		
+	}
+	
+	/**
+	 * getArg
+	 *
+	 * @param input the desired input
+	 * @return the value
+	 * @throws UserInfoException 
+	 */
+	private String getArg(String input) throws UserInfoException {
+		String val = argsHash.get(input);
+		if (val == null)
+			throw new UserInfoException("Cannot get option: "+input,1);
+		return val;
 	}
 	
 	private boolean checkArgs(String... checkargs) {
