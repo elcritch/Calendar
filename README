@@ -63,6 +63,7 @@ or
 to clean the project.
 
 The code is commented with javadoc. The basic structure is based on a pure server-client architecture.
+
 There are no callbacks from the client and errors are reported by throwing new UserInfoExceptions.
 
 
