@@ -27,20 +27,20 @@ import identity.server.*;
 
 public class IdClient
 {
-	private String serverName;
+	public String serverName;
 
 	// something new!
-	private int registryPort = 5299;
-	private IdentityUUID userdb;
+	public int registryPort = 5299;
+	public IdentityUUID userdb;
 
-	private UserInfo options, modoptions;
+	public UserInfo options, modoptions;
 	public CalendarEntry calentry;
 	public CalendarDB localCalDb;
 	public static Date start_time =null;
 	public static Date stop_time =null;
-	private int type;
+	public int type;
 
-	private String username;
+	public String username;
 	public Hashtable<String, String> argsHash  ;
 	public Hashtable<String, String> alternates;
 	
@@ -85,7 +85,7 @@ public class IdClient
 			numinputs = 2;
 		}
 		IdClient client = new IdClient();
-		client.parseInput(args);
+		//client.parseInput(args);
 		// client.printArgsHash();
 
 		client.parseInput(args);
@@ -106,7 +106,7 @@ public class IdClient
 	/**
 	 * run the client.
 	 */
-	private void perform()
+	public void perform()
 	{
 		try
 		{
@@ -259,7 +259,7 @@ public class IdClient
 	 *            beginning count of command line switches
 	 * @throws UserInfoException
 	 */
-		private void parse_switches(String[] argv, int init)
+		public void parse_switches(String[] argv, int init)
 	{
 		// args 0 host
 		// args 1 port
@@ -348,7 +348,7 @@ public class IdClient
 			}
 			// switch 6
 			/* delelte calendar entry */
-			else if (checkArgs("-d","-u","-p","-s")
+			else if (checkArgs("-d","-u","-p","-s") )
 			{
 				user = getArg("-u");
 				pass = getArg("-p");
@@ -384,7 +384,7 @@ public class IdClient
 			
 			// switch 8
 			/* Display remote user's free entries */					
-			else if  (checkArgs("-free","-u","-p","-l,","-rusr","-st","-et",) 	) 
+			else if  (checkArgs("-free","-u","-p","-l,","-rusr","-st","-et") 	) 
 			{
 					user = getArg("-u");
 					pass = getArg("-p");
@@ -436,7 +436,7 @@ public class IdClient
 	 * new switches for parsing calendar files added.
 	 * @throws ParseException 
 	 */
-	private void command_line() throws ParseException
+	public void command_line() throws ParseException
 	{
 		// perform command line actions
 		UserInfo result = null;
@@ -646,7 +646,7 @@ public class IdClient
 	 * @throws UserInfoException 
 	 *  
 	 */
-	private void parseInput(String[] ags) throws UserInfoException
+	public void parseInput(String[] ags) throws UserInfoException
 	{
 		int argCount = 0;
 		argsHash = new Hashtable<String, String>(30);  
@@ -735,14 +735,14 @@ public class IdClient
 	 * @return the value
 	 * @throws UserInfoException 
 	 */
-	private String getArg(String input) throws UserInfoException {
+	public String getArg(String input) throws UserInfoException {
 		String val = argsHash.get(input);
 		if (val == null)
 			throw new UserInfoException("Cannot get option: "+input,1);
 		return val;
 	}
 	
-	private boolean checkArgs(String... checkargs) {
+	public boolean checkArgs(String... checkargs) {
 		boolean result = true;
 		for (String arg : checkargs) {
 			if (!argsHash.containsKey(arg)) {
@@ -760,7 +760,7 @@ public class IdClient
 	 * This method returns the next sequence number available from the 
 	 * calendar db file.
 	 */
-	private int getNextSeqNum()
+	public int getNextSeqNum()
 	{
 		//check if the local calendar db file is empty. if so return 1
 		if (!localCalDb.db.isEmpty())
@@ -782,12 +782,12 @@ public class IdClient
 	 * @return void
 	 * This method prints the given arguments which were collected in a hash map 
 	 */
-	private void printArgsHash()
+	public void printArgsHash()
 	{
 		System.out.println("Arguments Hash is : \n" + argsHash.toString());
 	}
 
-	private String printUser(UserInfo u)
+	public String printUser(UserInfo u)
 	{
 		if (u == null)
 			return "Empty";
@@ -803,7 +803,7 @@ public class IdClient
 	 * @return boolean True if the entered time is not overlapping with the other entries
 	 * 				false if the entered time overlaps with the existing one.
 	 */
-	private boolean validateTime(Date datetime,int duration)
+	public boolean validateTime(Date datetime,int duration)
 	{
 		long entered_Start_Time  =  datetime.getTime();
 		long entered_dur_milliSec = duration *60*1000;

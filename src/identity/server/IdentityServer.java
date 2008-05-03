@@ -447,6 +447,10 @@ public class IdentityServer implements IdentityUUID
 			return null;
 	
 	}
+	
+	/**
+	* Return an array of empty time slots, with time broken into pre-given array sizes.
+	*/
 	public ArrayList<Date> getFreeTimeSlots(UserInfo newUserinfo, UserInfo auth,
 				long req_Start_time,long req_Stop_time) 
 	throws UserInfoException, RemoteException, ParseException
@@ -457,59 +461,57 @@ public class IdentityServer implements IdentityUUID
 			throw new UserInfoException("Cannot find given Username", 2);
 
 		UserInfo val = userDBwrapper.getUserName(newUserinfo.username);
-		if (val != null)
+		if (val == null)
+			return null;
+		
+		ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(val.uuid);
+		long time_slice = 1 * 30 * 60 * 1000;  /* half an hour */
+		int slot_num = (int) ((req_Stop_time - req_Start_time) / time_slice);
+		boolean[] timeArray = new boolean[slot_num];
+		
+		ArrayList<Date> Datelist = new ArrayList<Date>(slot_num);
+		for (int i = 0; i < slot_num; i++)
 		{
+			timeArray[i] = true;
+		}
 
+
+		for (CalendarEntry entry : userhm.values())
+		{
+			long file_Start_Time = entry.datetime.getTime();
+			long file_dur_milliSec = entry.duration * 60 * 1000;
+			long file_End_Time = file_Start_Time + file_dur_milliSec;
 			
-			ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(val.uuid);
-			long time_slice = 1 * 60 * 60 * 1000;
-			int slot_num = (int) ((req_Stop_time - req_Start_time) / time_slice);
-			boolean[] timeArray = new boolean[slot_num];
+			int pos1 = (int) ((file_Start_Time - req_Start_time) / time_slice);
+			int pos2 = (int) ((file_End_Time - req_Start_time) / time_slice);
 			
-			ArrayList<Date> Datelist = new ArrayList<Date>(slot_num);
-			for (int i = 0; i < slot_num; i++)
+			if ((pos1 >= 0 && pos1 <= slot_num))
 			{
-				timeArray[i] = true;
+				timeArray[pos1] = false;
+				System.out.println("Slot :"+pos1+ "Occupied");
 			}
-
-			for (CalendarEntry entry : userhm.values())
+			else if ((pos2 >= 0 && pos2 <= slot_num))
 			{
-				long file_Start_Time = entry.datetime.getTime();
-				long file_dur_milliSec = entry.duration * 60 * 1000;
-				long file_End_Time = file_Start_Time + file_dur_milliSec;
-				int pos1 = (int) ((file_Start_Time - req_Start_time) / time_slice);
-				int pos2 = (int) ((file_End_Time - req_Start_time) / time_slice);
-				if ((pos1 >= 0 && pos1 <= slot_num))
-				{
-					timeArray[pos1] = false;
-					System.out.println("Slot :"+pos1+ "Occupied");
-				}
-				else if ((pos2 >= 0 && pos2 <= slot_num))
-				{
-					timeArray[pos2] = false;
-					System.out.println("Slot :"+pos2+ "Occupied");
-				}
+				timeArray[pos2] = false;
+				System.out.println("Slot :"+pos2+ "Occupied");
 			}
-			String dfr = "MM/dd/yyyy hh:mma";
-			SimpleDateFormat formatter = new SimpleDateFormat(dfr);
-			
+		}
+		
+		String dfr = "MM/dd/yyyy hh:mma";
+		SimpleDateFormat formatter = new SimpleDateFormat(dfr);
 
-			for (int i = 0; i < slot_num; i++)
+		for (int i = 0; i < slot_num; i++)
+		{
+			if (timeArray[i] == true)
 			{
-				if (timeArray[i] == true)
-				{
-					System.out.println("Slot :"+i+ "Free");
-					long free_time = (req_Start_time + (i * time_slice));
-					Date tmp = new Date(free_time);
-					Datelist.add(tmp);
-				}
-
+				System.out.println("Slot :"+i+ "Free");
+				long free_time = (req_Start_time + (i * time_slice));
+				Date tmp = new Date(free_time);
+				Datelist.add(tmp);
 			}
-			return Datelist;
 
 		}
-		else
-			return null;
+		return Datelist;
 
 	}
 	
