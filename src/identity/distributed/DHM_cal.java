@@ -1,5 +1,7 @@
 package identity.distributed;
 
+import identity.calendar.CalendarEntry;
+
 /**
  * <<Class summary>>
  *
@@ -8,13 +10,13 @@ package identity.distributed;
  */
 public final class DHM_cal extends DHmsg {
     
-    protected Integer lamport;
-    protected UUID uuid;
+    protected Integer id;
+    protected CalendarEntry entry;
     
     /**
      * 
      */
-    public DHmsg() {
+    public DHM_cal() {
         
     }
 }
