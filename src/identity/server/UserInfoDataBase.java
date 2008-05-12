@@ -17,7 +17,7 @@ public class UserInfoDataBase
 
 	// Hashtable is synchronized already!
 	// TODO? synchronize the creation of the hashlist?
-	public ConcurrentHashMap<UUID, UserInfo> dbHash;
+	private ConcurrentHashMap<UUID, UserInfo> dbHash;
 
 	private File dbFile;
 	private String dbFileName;
@@ -94,10 +94,10 @@ public class UserInfoDataBase
 	*  Returns a synchronizedList containing the UUID database.
 	* @return List synchronizedList containing the UUID database
 	 */
-	public ConcurrentHashMap<UUID, UserInfo> getHashUUID ()
-	{
-		return dbHash;
-	}
+   // public ConcurrentHashMap<UUID, UserInfo> getHashUUID ()
+   // {
+   //    return dbHash;
+   // }
 
 
 	/**
@@ -149,6 +149,8 @@ public class UserInfoDataBase
 	{
 		return dbHash.get(uid);
 	}
+	
+	
 
 	public UserInfo getUserName(String uname)
 	{

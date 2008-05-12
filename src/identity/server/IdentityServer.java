@@ -47,10 +47,11 @@ public class IdentityServer implements IdentityUUID
 	private static final long serialVersionUID = 2503049572587527151L;
 	private static int registryPort = 5299;
 
-	private String name;
-	private UserInfoDataBase userDBwrapper;
-	private ConcurrentHashMap<UUID, UserInfo> userdb;
-	private CalendarDBServer caldb;
+   // private String name;
+   // private UserInfoDataBase userDBwrapper;
+   // private ConcurrentHashMap<UUID, UserInfo> userdb;
+   // private CalendarDBServer caldb;
+   
 	/**
 	 * Default Constructor
 	 */
@@ -244,7 +245,10 @@ public class IdentityServer implements IdentityUUID
 	throws UserInfoException, java.rmi.RemoteException
 	{
 		String ipaddr = clientaddr();
-		UserInfo orig = userDBwrapper.getUserName(reqUserInfo.username);
+		if (reqUserInfo.uuid != null)
+   		UserInfo orig = userdb.get(reqUserInfo.uuid);
+   	else 
+   		UserInfo orig = userDBwrapper.getUserName(reqUserInfo.username);
 
 		if (orig == null)
 			throw new UserInfoException("Cannot find given Username", 2);
@@ -261,6 +265,7 @@ public class IdentityServer implements IdentityUUID
 		                     );
 		// modify the database with the new data
 		userdb.put(noveluser.uuid, noveluser);
+		
 		UserInfo result = userdb.get(noveluser.uuid);
 		return UserInfo.scrubPassword(result);
 	}
