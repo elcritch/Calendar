@@ -9,12 +9,12 @@ import java.util.UUID;
  * @author Jaremy Creechley &lt;&gt;
  * @version 0.1
  */
-public class DHmsg implements Serializable, Types
+abstract class DHmsg implements Serializable, Types
 {
 
-	protected int type;
-	protected Long lamport;
-	protected UUID uuid;
+   protected int type;
+   protected Long lamport;
+   protected UUID coord;
 
    public DHmsg() 
     {}
@@ -23,6 +23,14 @@ public class DHmsg implements Serializable, Types
 	{
 	   this.type = type;
 	   this.lamport = lamport;
+	}
+	
+	public String toString() {
+	   String tostring = "";
+	   tostring += "type: "+type;
+	   tostring += " ";
+	   tostring += "lamport "+lamport;
+	   return tostring;
 	}
 }
 
