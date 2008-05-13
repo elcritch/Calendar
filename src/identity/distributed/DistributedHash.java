@@ -1,10 +1,17 @@
 package identity.distributed;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+
 import identity.server.UserInfo;
 
 public class DistributedHash implements Types
 {
    private SharedData share;
+   int port = 5294;
    
 	DistributedHash (SharedData share)
 	{
@@ -18,10 +25,17 @@ public class DistributedHash implements Types
 		InetAddress[] servers = share.servers.getArray();
 		
 		// connect to each server in the list, including our own
+		Sender tmp;
 		for (InetAddress server : servers) {
 		   // we don't need to do error checking here, the server will take care of that. 
-		   (new Server(server,dhm)).start();
+		   tmp = new Sender(server,dhm);
+		   tmp.start();
 		}
+		// sleep for a bit. we could join all threads, but this should give us enough delay?
+		tmp.join(200);
+		
+		// send the VOTE_BEGIN message to the coordinator
+		sendDHM(share.coordinator, new DHM(VOTE_BEGIN, dhm.lamport));
 	}
 	
 	protected void sendDHM(InetAddress host, DHmsg dhm) {
@@ -34,7 +48,7 @@ public class DistributedHash implements Types
 			out.close();
 		}
 		catch (IOException e1) {
-		   PrintColor.red("sending DHM: "+msg+" to: "+host);
+		   PrintColor.red("error: sending DHM: "+msg+" to: "+host);
 			System.out.println(e1);
 		}	   
 	}
@@ -51,12 +65,12 @@ public class DistributedHash implements Types
    			Socket s = new Socket(host, port);
    			OutputStream out = s.getOutputStream();
    			ObjectOutputStream outObj = new ObjectOutputStream(out);
-   			outObj.writeUnsharedObject(msg);
+   			outObj.writeUnshared(msg);
    			outObj.close();
    			out.close();
    		}
    		catch (IOException e1) {
-   		   PrintColor.red("sending DHM: "+msg+" to: "+host);
+   		   PrintColor.red("error: sending DHM: "+msg+" to: "+host);
    			System.out.println(e1);
    		}
 	   } 	      

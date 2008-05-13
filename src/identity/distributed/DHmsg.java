@@ -13,14 +13,16 @@ public class DHmsg implements Serializable, Types
 {
 
 	protected int type;
-	protected Integer lamport;
+	protected Long lamport;
 	protected UUID uuid;
 
-	/**
-	 * 
-	 */
-	public DHmsg()
+   public DHmsg() 
+    {}
+   
+	public DHmsg(int type, Long lamport)
 	{
+	   this.type = type;
+	   this.lamport = lamport;
 	}
 }
 
