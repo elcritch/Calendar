@@ -92,7 +92,7 @@ class ServerConnection extends Thread
       Basic sketch message queue:
          - every servlet has a message queue containing both user and calendar database DHmsg's.
          - any client can do a "sendAll" to send their message to all the other server's queues.
-         - once a servlet has sent their message to all the servers, including the master server
+         - once a servlet has sent their message to all the servers, including the master server and itself.
             it then must send a "commit msgid from queue" message to the master server
             (the connection to the client will be maintained during this?
             this could be used to throw a timeout exception cancelling the process if it takes too long. )
@@ -130,60 +130,23 @@ class ServerConnection extends Thread
 
 	public void run()
 	{
+      // we connect to client, read in their message and process it. Then we leave.
 		try {
-			InputStream in = client.getInputStream();
-			OutputStream out = client.getOutputStream();
-			ObjectOutputStream oout = new ObjectOutputStream(out);
-			oout.writeObject(new java.util.Date());
-			oout.flush();
-			client.close();
-			Thread.sleep(10000); // 10 secs
-		}
-		catch (InterruptedException e) {
-			System.out.println(e);
-		}
-		catch (IOException e) {
-			System.out.println("I/O error " + e);
-		}
-	}
-	
-	public void run()
-	{
-
-		// This code actually begin serving to client.
-		// First we want to create the object streams.
-		// then we need to loop and wait for a requestObject
-		// then we create an appropriate sendObject
-		try {
-			out = new ObjectOutputStream(client.getOutputStream());
 			in = new ObjectInputStream(client.getInputStream());
 
-			// this is the parent path location.
-			parentPath = new File(".");
+			// check is socket is alive still
+			stillAlive = client.isConnected();
 
-
-			System.out.println(parentPath.getPath());
-			parentPath = parentPath.getCanonicalFile();
-
-			// send initial response so we know we're alive
-			out.writeObject( new RequestError("Welcome, your wish is my command!", 0) );
-			while (stillAlive) {
-				// check is socket is alive still
-				stillAlive = client.isConnected();
-
-				// wait for user response
-				processRequest(in.readObject());
-				out.flush();
-
-				// check for interruptions, exit gracefully?
-				if (Thread.interrupted()) {
-					throw new InterruptedException();
-				}
+			// wait for user response
+			processRequest(client, in.readObject());
+			in.flush();
+         in.close();
+         
+			// check for interruptions, exit gracefully?
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
 			}
-
-			// nicely exit
-			thread_exit();
-
+			
 		}
 		catch (EOFException e3) { // Normal EOF
 			thread_exit();
@@ -197,34 +160,18 @@ class ServerConnection extends Thread
 		catch (InterruptedException e) {
 			System.out.println(e);
 		}
-		//finally {
-		//	thread_exit();
-		//}
-
+		
+		// nicely exit
+		thread_exit();
 	}
 
 
 	private void processRequest(Object request) throws IOException
 	{
-		File userRequestPath;
-		/*    System.out.println("Processing Request.");*/
-		// process request type to decide what to do:
-		if (request instanceof Request) {
-			Request userRequest = (Request) request;
-			userRequestPath = checkPathname(userRequest.path);
-			//System.out.println("URP: "+userRequestPath.getPath());
-			System.out.println("Request type: " + userRequest);
-			// check path
-			if ( userRequestPath == null ) {
-				return;
-			}
+		if (request instanceof DHmsg) {
+			Request msg = (DHmsg) request;
 
-			// check request type
-			if ( userRequest.type < 0 ||
-			     userRequest.type > Request.requestTypes.length ) {
-				System.out.println("Unknown Client request type. Type = " + userRequest.type );
-				return;
-			}
+			System.out.println("Request type: " + msg);
 
 			// execute request type
 			if ( userRequest.type == 0 )
@@ -237,7 +184,7 @@ class ServerConnection extends Thread
 				thread_exit();
 		}
 		else {
-			out.writeObject( new RequestError("Unkown Object!", 0) );
+		   PrintColor.yellow("Unknown message received: "+request.getClass() + " from: "+client.getClientAddr());
 		}
 		return;
 	}

@@ -36,9 +36,10 @@ public class DistributedHash implements Types
 		
 		// send the VOTE_BEGIN message to the coordinator
 		sendDHM(share.coordinator, new DHM(VOTE_BEGIN, dhm.lamport));
+		
 	}
 	
-	protected void sendDHM(InetAddress host, DHmsg dhm) {
+	protected void sendDHM(InetAddress host, DHmsg dhm) throws SocketTimeoutException {
       try {
 			Socket s = new Socket(host, port);
 			OutputStream out = s.getOutputStream();
@@ -68,6 +69,7 @@ public class DistributedHash implements Types
    			outObj.writeUnshared(msg);
    			outObj.close();
    			out.close();
+   			thread_exit();
    		}
    		catch (IOException e1) {
    		   PrintColor.red("error: sending DHM: "+msg+" to: "+host);
