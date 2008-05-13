@@ -3,8 +3,5 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="bin"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="resources/jgroup/commons-logging.jar"/>
-	<classpathentry kind="lib" path="resources/jgroup/jgroups-all.jar"/>
-	<classpathentry kind="lib" path="resources/jgroup/log4j.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

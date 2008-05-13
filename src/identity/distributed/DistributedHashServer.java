@@ -159,6 +159,8 @@ class ServerConnection extends Thread
       if (share.checkAmCoordinator()) {
          // begin vote process
          // send vote_request objects to all servers
+         
+         sendAll();
          // receive responses back
          // if all checkout, then send vote_commit
       } else {

@@ -1,6 +1,10 @@
+package identity.election;
+
+import identity.server.SharedData;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
@@ -15,9 +19,9 @@ import java.util.NoSuchElementException;
 
 
 /**
-* @author amit
-* @author Jaremy Creechley 
-*/
+ * @author amit
+ * @author Jaremy Creechley 
+ */
 public class Groupie
 {
 
@@ -34,52 +38,57 @@ public class Groupie
 	private static final int CHECKSUM = 5;
 	private static final int SELF_MSG = -1;
 
-   private ServerList servers;
-   private Set<Integer> checksums = Collections.synchronizedSet(new HashSet<Integer>());
+	// shared data
+	private SharedData shared;
+	
+	private Set<Integer> checksums = Collections.synchronizedSet(new HashSet<Integer>());
 	private InetAddress group;
 	private MulticastSocket s;
 
-   private CoordLock coordLock = new CoordLock();
-   private boolean checksumProcess = false;
-   private int checksumFailureCount = 0;
-   /**
-    * Setter for checksumProcess.
-    * @param newChecksumProcess new value for checksumProcess
-    */
-   public synchronized void setChecksumProcess(boolean cp) {
-       checksumProcess = cp;
-   }
+	private CoordLock coordLock = new CoordLock();
+	private boolean checksumProcess = false;
+	private int checksumFailureCount = 0;
+	private ServerList servers;
+	/**
+	 * Setter for checksumProcess.
+	 * @param newChecksumProcess new value for checksumProcess
+	 */
+	public synchronized void setChecksumProcess(boolean cp) {
+		checksumProcess = cp;
+	}
 
-   /**
-    * Getter for checksumProcess.
-    * @return checksumProcess
-    */
-   public synchronized boolean checksumProcess() {
-       return checksumProcess;
-   }
-   
+	/**
+	 * Getter for checksumProcess.
+	 * @return checksumProcess
+	 */
+	public synchronized boolean checksumProcess() {
+		return checksumProcess;
+	}
+
 	private class Pack
 	{
-      public Pack (int type, InetAddress addr)
-      {
-         this.type = type;
-         this.other = null;
-         this.addr = addr;
-      }
-      public Pack (int type, int other, InetAddress addr)
-      {
-         this.type = type;
-         this.other = new Integer(other);
-         this.addr = addr;
-      }
+		public Pack (int type, InetAddress addr)
+		{
+			this.type = type;
+			this.other = null;
+			this.addr = addr;
+		}
+		public Pack (int type, int other, InetAddress addr)
+		{
+			this.type = type;
+			this.other = new Integer(other);
+			this.addr = addr;
+		}
 		public int type;
 		public Integer other;
 		public InetAddress addr;
 	}
 
-	public Groupie()
+	public Groupie(SharedData shared)
 	{
-
+		this.shared = shared;
+		this.servers = shared.servers;
+		
 		try {
 			group = InetAddress.getByName(mcastAddress);
 			PrintColor.green("InetAddress: " + group);
@@ -111,53 +120,59 @@ public class Groupie
 
 	}
 
-   private class GroupieTimer extends TimerTask {
-      public void run() {
-         try {
-            // coordLock.amCoordinator();
-            PrintColor.blue("\n\nDancing...");
-            sendIntMessage(DISCOVER_GROUP);
-            // Thread.sleep(3*1000);
-            // System.out.println("print group:");
-            // printGroup();
-         }
-         // catch (InterruptedException e) {
-         //    e.printStackTrace();
-         //    System.out.println("Closing?");
-         // }
-         catch (IOException e) {
-            PrintColor.red("Socket IOError: " + e);
-         }
-      }
-   }
-   
-   /** 
-    * send out our CHECKSUM some set time after receiving a DISCOVER_GROUP msg
-    * this time will be our "DISCOVER_GROUP" time
-    * Algorithm:
-    * After receiving a DISCOVER_GROUP message, if not already in a "checksumProcess time"
-    * begin this timer for a single repeat. After the alloted time, send a CHECKSUM message.
-    * Sleep for a time and then compare results!
-   */
-   private class CheckDiscoverResults extends TimerTask {
-      public void run() {
-         try {
-            PrintColor.yellow("Sending out checksum");
-            sendTwoIntMessage(CHECKSUM,servers.hashCode());
-            Thread.sleep(5*1000);
-            compareChecksums();
-         }
-         catch (InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Closing?");
-         }
-         catch (IOException e) {
-            PrintColor.red("Socket IOError: " + e);
-         }
-      }
-   }
+	private class GroupieTimer extends TimerTask {
+		public void run() {
+			try {
+				// coordLock.amCoordinator();
+				PrintColor.blue("\n\nDancing...");
+				sendIntMessage(DISCOVER_GROUP);
+				// Thread.sleep(3*1000);
+				// System.out.println("print group:");
+				// printGroup();
+			}
+			// catch (InterruptedException e) {
+			//    e.printStackTrace();
+			//    System.out.println("Closing?");
+			// }
+			catch (IOException e) {
+				PrintColor.red("Socket IOError: " + e);
+			}
+		}
+	}
 
+	/** 
+	 * send out our CHECKSUM some set time after receiving a DISCOVER_GROUP msg
+	 * this time will be our "DISCOVER_GROUP" time
+	 * Algorithm:
+	 * After receiving a DISCOVER_GROUP message, if not already in a "checksumProcess time"
+	 * begin this timer for a single repeat. After the alloted time, send a CHECKSUM message.
+	 * Sleep for a time and then compare results!
+	 */
+	private class CheckDiscoverResults extends TimerTask {
+		public void run() {
+			try {
+				PrintColor.yellow("Sending out checksum");
+				// send out the hashcode
+				sendTwoIntMessage( CHECKSUM, generateChecksum());
+				Thread.sleep(5*1000);
+				compareChecksums();
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+				System.out.println("Closing?");
+			}
+			catch (IOException e) {
+				PrintColor.red("Socket IOError: " + e);
+			}
+		}
+	}
 
+	private int generateChecksum() {
+		// try using the sum of the servers hashcode with the current coord ip address
+		return servers.hashCode()
+			+shared.clock.getCoordInetAddress().hashCode();
+	}
+	
 	public void printDatagram(DatagramPacket pkt) throws UnknownHostException, IOException
 	{
 		String packetType = "";
@@ -171,40 +186,39 @@ public class Groupie
 		case 3:
 			packetType = "JOIN_GROUP";
 			break;
-      case 4:
-         packetType = "PRESENT";
-         break;
-      case -1:
-         packetType = "SELF_MSG";
-         break;
-      case 5:
-         packetType = "CHECKSUM";
-         break;
+		case 4:
+			packetType = "PRESENT";
+			break;
+		case -1:
+			packetType = "SELF_MSG";
+			break;
+		case 5:
+			packetType = "CHECKSUM";
+			break;
 		default:
 			break;
 		}
 		PrintColor.green("Server " + InetAddress.getLocalHost() + ": Received packet type " +
-		                   packetType + " from " + pkt.getAddress());
+				packetType + " from " + pkt.getAddress());
 	}
 
 	private void initialize(boolean setcoord) 	throws IOException
 	{
-	   if (setcoord)
-         coordLock.becomeCoordinator();
-         
-	   // Initialize Things
-	   servers = new ServerList((Inet4Address) InetAddress.getLocalHost());
-	   s.setSoTimeout(timeout);
+		if (setcoord)
+			coordLock.becomeCoordinator();
 
-	   // send intial message
-	   sendIntMessage(DISCOVER_GROUP);
+		// Initialize Things
+		servers = new ServerList((InetAddress) InetAddress.getLocalHost());
+		s.setSoTimeout(timeout);
+
+		// send intial message
+		sendIntMessage(DISCOVER_GROUP);
 	}
 
 	public void leave()
 	{
 		try {
 			sendIntMessage(LEAVE_GROUP);
-			servers.clear();
 			s.leaveGroup(group);
 		}
 		catch (IOException e) {
@@ -220,21 +234,27 @@ public class Groupie
 		while (true) {
 			Pack pack = receiveIntMessage(default_timeout);
 			PrintColor.blue("Recieved msg: "+pack.type);
+			
+			shared.elock.waitForElection();
+			
 			switch (pack.type) {
 			case DISCOVER_GROUP:
-			   // send a PRESENT msg with the current Coordinators IP overload as a byte. 
-			   // NOTE! IP address should be IPv4!!!
-			   int coordip = Utility.getInt(lock.getCoordInetAddress().getAddress());
-				sendIntMessage(PRESENT,coordip);
+				// send a PRESENT msg with the current Coordinators IP overload as a byte. 
+				// NOTE! IP address should be IPv4!!!
+				int coordip = 0;
+				if (shared.clock.getCoordInetAddress() != null)
+					coordip = shared.clock.getCoordInetAddress().hashCode();
+				
+				sendTwoIntMessage(PRESENT,coordip);
 				servers.add(pack.addr);
 				// now begin the checksum process
 				if (!checksumProcess()) {
-				   PrintColor.yellow("Starting checksumProcess");
-				   setChecksumProcess(true);
-   				int delay = 2 * 1000; // delay for DISCOVER_GROUP before CHECKSUM'ing
-         		Timer timer = new Timer();
-         		timer.schedule(new CheckDiscoverResults(), delay);
-      		} 
+					PrintColor.yellow("Starting checksumProcess");
+					setChecksumProcess(true);
+					int delay = 2 * 1000; // delay for DISCOVER_GROUP before CHECKSUM'ing
+					Timer timer = new Timer();
+					timer.schedule(new CheckDiscoverResults(), delay);
+				} 
 				break;
 			case JOIN_GROUP:
 				servers.add(pack.addr);
@@ -244,28 +264,30 @@ public class Groupie
 				break;
 			case PRESENT:
 				servers.add(pack.addr);
-				lock.setCoordInetAddress(pack.other);
+				if (pack.other != 0)
+					shared.clock.setCoordInetAddress(pack.other);
+				
 				break;
-         case SELF_MSG:
-            PrintColor.red("Debug: Self message");
-         case CHECKSUM:
-            PrintColor.red("Debug: CHECKSUM "+pack.other);
-            checksums.add(pack.other);
-            break;
+			case SELF_MSG:
+				PrintColor.red("Debug: Self message");
+			case CHECKSUM:
+				PrintColor.red("Debug: CHECKSUM "+pack.other);
+				checksums.add( pack.other );
+				break;
 			default:
 				PrintColor.red("Error... unknown message! " + pack.type);
-				break;
+			break;
 			}
 			if (debug >= 2) printGroup();
 		}
 	}
 
 	/**
-	* receiveIntMessage
-	*
-	* @return the integer message type
+	 * receiveIntMessage
+	 *
+	 * @return the integer message type
 	 * @throws IOException 
-	*/
+	 */
 	public Pack receiveIntMessage(int timeout) throws IOException
 	{
 		s.setSoTimeout(timeout);
@@ -286,35 +308,35 @@ public class Groupie
 		return new Pack(recvInt, recvInt2, recv.getAddress() );
 	}
 
-   /**
-   * sendIntMessage
-   *
-   * @param msg integer data to send.
-    * @throws IOException 
-   */
-   public void sendIntMessage(int msg) throws IOException
-   {
-      if (debug >= 2)
-         PrintColor.red("\t# Debug: Sending msg: " + msg);
-      byte[] msgBytes = Utility.getBytes(msg,0);
-      DatagramPacket send_msg = new DatagramPacket(msgBytes, 8, group, discoveryPort);
-      s.send(send_msg);
-   }  
-   
-   /**
-   * sendTwoIntMessage
-   *
-   * @param msg integer data to send with another int
-    * @throws IOException 
-   */
-   public void sendTwoIntMessage(int msg, int other) throws IOException
-   {
-      if (debug >= 2)
-         PrintColor.red("\t# Debug: Sending msg: " + msg);
-      byte[] msgBytes = Utility.getBytes(msg,other);
-      DatagramPacket send_msg = new DatagramPacket(msgBytes, 8, group, discoveryPort);
-      s.send(send_msg);
-   }
+	/**
+	 * sendIntMessage
+	 *
+	 * @param msg integer data to send.
+	 * @throws IOException 
+	 */
+	public void sendIntMessage(int msg) throws IOException
+	{
+		if (debug >= 2)
+			PrintColor.red("\t# Debug: Sending msg: " + msg);
+		byte[] msgBytes = Utility.getBytes(msg,0);
+		DatagramPacket send_msg = new DatagramPacket(msgBytes, 8, group, discoveryPort);
+		s.send(send_msg);
+	}  
+
+	/**
+	 * sendTwoIntMessage
+	 *
+	 * @param msg integer data to send with another int
+	 * @throws IOException 
+	 */
+	public void sendTwoIntMessage(int msg, int other) throws IOException
+	{
+		if (debug >= 2)
+			PrintColor.red("\t# Debug: Sending msg: " + msg);
+		byte[] msgBytes = Utility.getBytes(msg,other);
+		DatagramPacket send_msg = new DatagramPacket(msgBytes, 8, group, discoveryPort);
+		s.send(send_msg);
+	}
 
 	public void printGroup()
 	{
@@ -325,74 +347,75 @@ public class Groupie
 		}
 
 	}
-   
-   /**
-    * compareChecksums
-    *
-    * @param  
-    * @return the results of the comparison
-    */
-   public synchronized boolean compareChecksums( ) {
-      try {
-         System.out.println("DEBUG: beginning checksum");
-         Iterator<Integer> itr = checksums.iterator();
-         Integer last = itr.next();
-		   PrintColor.yellow("checksum: "+last);
-   		while (itr.hasNext()) {
-   		   Integer next = itr.next();
-   		   PrintColor.yellow("checksum: "+next);
-            if ( !last.equals(next) ) {
-            // if ( !last.equals(itr.next()) ) {
-               // turn off checksumProcess and rediscover group
-               checksumFailureCount++;
-               PrintColor.yellow("CHECKSUM Failure! Toltal number of failurs: "+checksumFailureCount);
-               setChecksumProcess(false);
-               sendIntMessage(DISCOVER_GROUP);
-            }
-   		}
-   		// DEBUG
-   		System.out.println("DEBUG: print group after checksumed");
-   		printGroup();
-         // System.out.println("\n");
-      } catch (NoSuchElementException e) {
-         System.out.println("Error not enough elements in iterator");
-      }
-      catch (IOException e) {
-         PrintColor.red("Socket IOError: " + e);
-         e.printStackTrace();
-      } 
-      finally {
-         checksums.clear();
-         setChecksumProcess(false);
-      }
+
+	/**
+	 * compareChecksums
+	 *
+	 * @param  
+	 * @return the results of the comparison
+	 */
+	public synchronized boolean compareChecksums( ) {
+		try {
+			System.out.println("DEBUG: beginning checksum");
+			Iterator<Integer> itr = checksums.iterator();
+			Integer last = generateChecksum();
+			
+			PrintColor.yellow("checksum: "+last);
+			while (itr.hasNext()) {
+				Integer next = itr.next();
+				PrintColor.yellow("checksum: "+next);
+				if ( !last.equals(next) ) {
+					// if ( !last.equals(itr.next()) ) {
+					// turn off checksumProcess and rediscover group
+					checksumFailureCount++;
+					PrintColor.yellow("CHECKSUM Failure! Toltal number of failurs: "+checksumFailureCount);
+					setChecksumProcess(false);
+					sendIntMessage(DISCOVER_GROUP);
+				}
+			}
+			// DEBUG
+			System.out.println("DEBUG: print group after checksumed");
+			printGroup();
+			// System.out.println("\n");
+		} catch (NoSuchElementException e) {
+			System.out.println("Error not enough elements in iterator");
+		}
+		catch (IOException e) {
+			PrintColor.red("Socket IOError: " + e);
+			e.printStackTrace();
+		} 
+		finally {
+			checksums.clear();
+			setChecksumProcess(false);
+		}
 		System.out.println("group checksumed well");
 		return true;
-   }
+	}
 
-   
-   
-   
+
+
+
 	/**
-	* @param args
-	*/
+	 * @param args
+	 */
 	public static void main(String[] args)
 	{
-	   boolean setcoord= false;
-      PrintColor.ansi = true;
-	   
-	   try {
-			Groupie g = new Groupie();
+		boolean setcoord= false;
+		PrintColor.ansi = true;
+		SharedData shared = new SharedData();
+		try {
+			Groupie g = new Groupie(shared);
 			// NEW TEST!
 			// NEW DOUBLE!
 			if (args.length>0) {
-			   setcoord = true;
-			   System.out.println("%% I am Coordinator! %%");
+				setcoord = true;
+				System.out.println("%% I am Coordinator! %%");
 			}
-         g.initialize(setcoord);
+			g.initialize(setcoord);
 			g.groupDance();
 		}
 		catch (IOException e) {
-		   e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 
