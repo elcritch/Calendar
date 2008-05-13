@@ -59,9 +59,6 @@ public class IdentityServer implements IdentityUUID
 	{
 		super();
 		System.out.println("Creating new RMI agent!");
-		userDBwrapper = new UserInfoDataBase( "defaultUserInfo.db");
-		userdb = userDBwrapper.dbHash;
-		caldb = new CalendarDBServer("CALENDAR");
 
 	}
 

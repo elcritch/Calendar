@@ -16,9 +16,25 @@ public class DistributedHashServer
 	private int port;
 	ServerSocket ss;
 
-	public TimeServer(int port)
+   // storage databases
+	private UserInfoDataBase userDBwrapper;
+	private ConcurrentHashMap<UUID, UserInfo> userdb;
+	private CalendarDBServer caldb;
+
+   // queue databases
+	private ConcurrentHashMap<AtomicLong, DHmsg> queue;
+	
+	public DistributedHashServer(int port)
 	{
 		try {
+		   // use the IP address as a "tmp directory"
+		   String ip_addr = InetAddress.getLocalHost().toString();
+		   File dir = new File("conf/"+ip_addr).mkdir();
+		   userDBwrapper = new UserInfoDataBase(dir.getFileName()+"/defaultUserInfo.db");
+		   
+   		userdb = userDBwrapper.dbHash;
+   		caldb = new CalendarDBServer(ip_addr+"/CALENDAR");
+   		
 			ss = new ServerSocket(port);
 		}
 		catch (IOException e) {
@@ -26,8 +42,7 @@ public class DistributedHashServer
 		}
 	}
 
-
-	public void runServer()
+	public void run()
 	{
 		Socket client;
 		try {
@@ -51,7 +66,7 @@ public class DistributedHashServer
 			System.exit(1);
 		}
 		TimeServer server = new TimeServer(Integer.parseInt(args[0]));
-		server.runServer();
+		server.start();
 	}
 
 }
@@ -71,10 +86,13 @@ class ServerConnection extends Thread
       Code to process 2 stage voting commit
       this section should include code to receive vote messages for both the queue and the databases 
       
+      Terminology: master is the coordinator server. every "server" is a client and server. In this case we
+         will use both.
+         
       Basic sketch message queue:
-         - every server has a message queue containing both user and calendar database DHmsg's.
-         - any server can do a "sendAll" to send their message to all the other server's queues.
-         - once a server has sent their message to all the servers, including the master server
+         - every servlet has a message queue containing both user and calendar database DHmsg's.
+         - any client can do a "sendAll" to send their message to all the other server's queues.
+         - once a servlet has sent their message to all the servers, including the master server
             it then must send a "commit msgid from queue" message to the master server
             (the connection to the client will be maintained during this?
             this could be used to throw a timeout exception cancelling the process if it takes too long. )
