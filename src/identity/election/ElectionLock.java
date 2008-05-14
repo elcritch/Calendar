@@ -12,6 +12,7 @@ public class ElectionLock
 {
    boolean election = false;
    
+   public synchronized 
    
 	public synchronized void startElection( )
 	{

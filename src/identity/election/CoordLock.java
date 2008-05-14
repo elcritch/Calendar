@@ -47,6 +47,7 @@ public class CoordLock
 
 	public synchronized void setCoordInetAddress(Integer coordip) {
 		try {
+		   System.out.println("got from groupie");
 			setCoordInetAddress( InetAddress.getByAddress(Utility.getBytes(coordip)) );
 		} catch (IOException e) {
 			e.printStackTrace();

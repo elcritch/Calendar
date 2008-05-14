@@ -59,11 +59,12 @@ public class DistributedHashServer extends Thread
 		try {
 			// use the IP address as a "tmp directory"
 			String ip_addr = InetAddress.getLocalHost().getHostAddress();
-			File dir = new File("conf/" + ip_addr);
+			String dirname = "./conf/" + ip_addr + "/";
+			File dir = new File(dirname);
 			dir.mkdir();
 			// better way to do this?
-			userdb = new UserInfoDataBase( dir.getName() + "/defaultUserInfo.db" );
-			caldb = new CalendarDBServer(dir.getName() + "/CALENDAR");
+			userdb = new UserInfoDataBase( dirname + "/defaultUserInfo.db" );
+			caldb = new CalendarDBServer( dirname + "/CALENDAR");
 
 			ss = new ServerSocket(port);
 		}
@@ -93,8 +94,8 @@ public class DistributedHashServer extends Thread
 	public static void main (String [] args)
 	{
 		SharedData data = new SharedData();
-
-		DistributedHashServer dhserver = new DistributedHashServer( data, 5294);
+      int dhmport = 5294;
+		DistributedHashServer dhserver = new DistributedHashServer( data, dhmport);
 
 		dhserver.start();
 
@@ -176,7 +177,6 @@ class ServerConnection extends Thread implements Types
 			DHM response, result = null;
 			
 			switch (vote.type) {
-			
 			case   VOTE_BEGIN:
 				performVoteBegin(vote);
 				break;
@@ -223,7 +223,7 @@ class ServerConnection extends Thread implements Types
 				}
 				break;
 			default :
-				break;
+   			throw new ProcessException("ERROR: don't know the vote type",vote);
 			}
 		}
 		catch (ProcessException pe) {
@@ -234,7 +234,9 @@ class ServerConnection extends Thread implements Types
 	}
 
 	private void process(DHM_checkpoint chkpnt)
-	{}
+	{
+	   //TODO
+	}
 
 
    /**

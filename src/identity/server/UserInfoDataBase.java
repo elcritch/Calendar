@@ -123,7 +123,6 @@ public class UserInfoDataBase
 		try {
 			// delete file, then checkpoint it
 			dbFile.delete();
-			
 			ObjectOutputStream dbStreamOut = new ObjectOutputStream( new FileOutputStream(dbFile, false) );
 			dbStreamOut.writeUnshared(dumparray);
 			dbStreamOut.close();

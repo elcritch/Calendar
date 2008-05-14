@@ -234,6 +234,10 @@ public class Groupie extends Thread
 		}
 	}
 
+   /**
+   
+   
+   */
 	public void groupDance() throws IOException
 	{
 		byte[] buf = new byte[8];
@@ -250,6 +254,7 @@ public class Groupie extends Thread
 				// send a PRESENT msg with the current Coordinators IP overload as a byte. 
 				// NOTE! IP address should be IPv4!!!
 				int coordip = 0;
+				
 				if (shared.clock.getCoordInetAddress() != null)
 					coordip = shared.clock.getCoordInetAddress().hashCode();
 				

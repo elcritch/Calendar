@@ -58,7 +58,7 @@ class ElectionMonitor extends Thread
 				{
 					
 					try {
-						if(share.clock.getCoordInetAddress() ==null)
+						if(share.clock.getCoordInetAddress() == null)
 							throw new IOException("Initial ");
 						if(!nodeObj.getIp().equals(share.clock.getCoordInetAddress()))
 						{
