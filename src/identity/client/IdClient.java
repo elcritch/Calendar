@@ -30,7 +30,7 @@ public class IdClient
 	public String serverName;
 
 	// something new!
-	public int registryPort = 5299;
+	public int registryPort = 5235;
 	public IdentityUUID userdb;
 
 	public UserInfo options, modoptions;
@@ -116,10 +116,11 @@ public class IdClient
 			System.out.println("RMI connection successful");
 
 			// invoke method on server object
-			username = getArg("-u");
+
 
 			if (argsHash.containsValue("cal"))
 			{
+				username = getArg("-u");
 				UserInfo tmp = userdb.lookupUUID(username);
 				if (tmp==null)
 					throw new UserInfoException("Invalide username: "+username,0);
@@ -166,7 +167,7 @@ public class IdClient
 	 * tion, the client contacts the server and attempts to create the new login
 	 * name. The client optionally provides the real user name along with the
 	 * request. In Java, we can merely pass the user.name property as the
-	 * user’s real name. Use System.getProperty("user.name") to obtain this
+	 * user���s real name. Use System.getProperty("user.name") to obtain this
 	 * information. If successful, it returns the UUID (or an Account ob ject
 	 * from the server that the client can then cache if it so desires).
 	 * Otherwise it returns an error message. --lookup <loginname> With this
@@ -181,7 +182,7 @@ public class IdClient
 	 * assigned). If the new login name is taken, then the server returns an
 	 * error. --get users|uuids|all The client contacts the server and obtains
 	 * either a list all login names, lits of all UUIDs or a list of user, UUID
-	 * and string description all accounts (don’t show encrypted passwords in
+	 * and string description all accounts (don���t show encrypted passwords in
 	 * this option).
 	 */
 
@@ -200,7 +201,7 @@ public class IdClient
 				+ "--new/-n cal -u <username> --password/-p  <password>  -t <time> -sl <public/private> -des <descrption> -du <duration> create a new calendar entry.\n"
 				+ "--del cal  -u <username> --password/-p <password> -s <sequence number> delete calendar entries for the given sequence number\n"
 				+ "--show/-s cal  -u <username> --password/-p <password>  display the personal calendar entries\n. "
-				+ "--show/-s cal  -u <username> --password/-p <password> -rusr <remote user> -l <all/global> display the others calendar entries \n.");
+				+ "--show/-s cal  -u <username> --password/-p <password> -rusr <remote user> -lv <all/global> display the others calendar entries \n.");
 
 		System.err.println("Usage: java IdClient <host> [<registry-port>] [--switch]");
 		if (mesg != null)
@@ -275,9 +276,12 @@ public class IdClient
 		try
 		{
 			// switch 0
-			if (checkArgs("-c","-u","-p"))
+			
+			//System.exit(0);
+			if (checkArgs("-c","-p"))
 			{
-				user = getArg("-u");				
+				System.out.println("Hello........");
+				user = getArg("-c");				
 				// now check for real name
 				String [] split = user.split("\\s+",1);
 				if (split.length == 2) {
@@ -293,7 +297,6 @@ public class IdClient
 			// switch 1
 			else if (checkArgs("-l"))
 			{
-				user = getArg("-u");
 				type = 1;
 			}
 			// switch 2
@@ -306,11 +309,12 @@ public class IdClient
 			else if (checkArgs("-m","-p"))
 			{
 				// --modify <oldloginname> <newloginname> [--password <password>]
-				String [] split = getArg("-m").split("\\s+",1);
+				String [] split = getArg("-m").split("\\s+",2);
+				System.out.println(split[1]);
 				if (split.length == 2) {
 					user = split[0];
 					newuser = split[1];
-				} else throw new UserInfoException("Modify option is incorrect: "+getArg("-m"), 1);				
+          				} else throw new UserInfoException("Modify option is incorrect: "+getArg("-m"), 1);				
 					
 				if (newuser.length() > 32 || user.length() > 32)
 					throw new UserInfoException("Username too long", 1);				
@@ -681,16 +685,20 @@ public class IdClient
 					else
 						break;
 				}
+				
 				//insert into hashmap
 				if (!argsHash.containsKey(key))
+				{
+					
 					argsHash.put(key, value);
+				}
 			}
 			else
 				argCount++;
 		}
 		
 		alternates.put("--create",          "-c"  );
-		alternates.put("--login",           "-l"  );
+		alternates.put("--lookup",           "-l"  );
 		alternates.put( "--reverse-lookup", "-r"  );
 		alternates.put("--modify",          "-m"  );
 		alternates.put("--get",             "-g"  );
@@ -703,7 +711,7 @@ public class IdClient
 		alternates.put("--new",             "-n"  );
 		alternates.put("--description",     "-des"  );
 		alternates.put("--time",            "-t"  );
-		alternates.put("--list",            "-l"  );
+		alternates.put("--level",            "-lv"  );
 
 		alternates.put("--duration"   , "-du"   );
 		alternates.put("--sequenceid" , "-id"   );
@@ -726,6 +734,8 @@ public class IdClient
 			}
 		}
 		
+		
+		
 	}
 	
 	/**
@@ -744,9 +754,13 @@ public class IdClient
 	
 	public boolean checkArgs(String... checkargs) {
 		boolean result = true;
-		for (String arg : checkargs) {
-			if (!argsHash.containsKey(arg)) {
-				System.out.println("Incorrect Usage. Missing argument: "+arg);				
+		
+		for (String arg : checkargs)
+		{
+			
+			if (!argsHash.containsKey(arg))
+			{
+				//System.out.println("Incorrect Usage. Missing argument: "+arg);				
 				result = false;
 			}
 		}

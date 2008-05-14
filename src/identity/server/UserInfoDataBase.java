@@ -17,7 +17,7 @@ public class UserInfoDataBase
 
 	// Hashtable is synchronized already!
 	// TODO? synchronize the creation of the hashlist?
-	private ConcurrentHashMap<UUID, UserInfo> dbHash;
+	ConcurrentHashMap<UUID, UserInfo> dbHash;
 
 	private File dbFile;
 	private String dbFileName;

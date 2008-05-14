@@ -45,14 +45,12 @@ public class IdentityServer implements IdentityUUID
 	 * 
 	 */
 	private static final long serialVersionUID = 2503049572587527151L;
-	private static int registryPort = 5299;
-	private String name;
 
-   // private String name;
-   // private UserInfoDataBase userDBwrapper;
-   // private ConcurrentHashMap<UUID, UserInfo> userdb;
-   // private CalendarDBServer caldb;
-   
+	private static int registryPort = 5236;
+	private String name;
+	private UserInfoDataBase userDBwrapper;
+	private ConcurrentHashMap<UUID, UserInfo> userdb;
+	private CalendarDBServer caldb;
 	/**
 	 * Default Constructor
 	 */
@@ -60,7 +58,10 @@ public class IdentityServer implements IdentityUUID
 	{
 		super();
 		System.out.println("Creating new RMI agent!");
-
+		userDBwrapper = new UserInfoDataBase( "defaultUserInfo.db");
+		userdb = userDBwrapper.dbHash;
+		caldb = new CalendarDBServer("servercalendar.scal");
+		
 	}
 
 	/**
@@ -76,7 +77,7 @@ public class IdentityServer implements IdentityUUID
 			RMIClientSocketFactory rmiClientSocketFactory = new SslRMIClientSocketFactory();
 			RMIServerSocketFactory rmiServerSockeyFactory = new SslRMIServerSocketFactory();
 			IdentityUUID ccAuth = (IdentityUUID) UnicastRemoteObject.exportObject(this, 0,
-			                      rmiClientSocketFactory, rmiServerSockeyFactory);
+			                    rmiClientSocketFactory, rmiServerSockeyFactory);
 			Registry registry = LocateRegistry.createRegistry(registryPort);
 
 			registry.rebind(name, ccAuth);
@@ -98,18 +99,18 @@ public class IdentityServer implements IdentityUUID
 		if (args.length > 0) {
 			registryPort = Integer.parseInt(args[0]);
 		}
-
+		
 		String certName = "./resources/Server_Keystore";
 		File cert = new File(certName);
-		System.out.println("Can read cert file? " + cert.canRead());
-		System.out.println("cert file location: " + cert.getCanonicalPath());
+		System.out.println("Can read cert file? "+cert.canRead());
+		System.out.println("cert file location: "+cert.getCanonicalPath());
 
 		// setup the properties
 		System.out.println("Setting System Properties....");
 		System.setProperty("javax.net.ssl.keyStore", certName);
 		System.setProperty("javax.net.ssl.keyStorePassword", "server");
 		System.setProperty("java.security.policy", "./resources/mysecurity.policy");
-
+		
 		// setup the server and bind it.
 		try {
 			IdentityServer server = new IdentityServer();
@@ -119,7 +120,7 @@ public class IdentityServer implements IdentityUUID
 			th.printStackTrace();
 			System.out.println("Exception occurred: " + th);
 		}
-
+		
 	}
 
 
@@ -151,23 +152,23 @@ public class IdentityServer implements IdentityUUID
 	{
 		UserInfo newUser;
 		String ipaddr = clientaddr();
-
+		
 		if (userDBwrapper.containsUserName(req.username)) {
-			System.err.println("Username already present: " + req.username + " req: " + req);
+			System.err.println("Username already present: " + req.username +" req: "+req);
 			throw new UserInfoException("Username already present: " + req.username, 1);
 		}
 
 		// create a new user id, just because. Set the ipaddr and current date.
 		newUser = new UserInfo(req, ipaddr);
 		// TODO check the password to make sure it is correct length.
-
+		
 		// check if UUID is already in database
 		if (userdb.containsKey(newUser.uuid))
-			throw new UserInfoException("UUID already in database. Please call getUniqueUUID() then retry. ", 2);
-
+			throw new UserInfoException("UUID already in database. Please call getUniqueUUID() then retry. ",2);
+			
 		System.out.println("Added user to userdb");
 		userdb.put(newUser.uuid, newUser);
-		UserInfo test = userdb.get(newUser.uuid);
+		UserInfo test = userdb.get(newUser.uuid); 
 		System.err.println("Created: " + newUser);
 
 		return UserInfo.scrubPassword(test);
@@ -203,36 +204,36 @@ public class IdentityServer implements IdentityUUID
 	 * @deprecated This method should be merged with modifyUserName method to be more generic. 
 	 */
 	public UserInfo modifyUUID( UserInfo reqUserInfo, UserInfo newUser)
-	throws UserInfoException, java.rmi.RemoteException
+		throws UserInfoException, java.rmi.RemoteException
 	{
 		String ipaddr = clientaddr();
 		UserInfo orig = userdb.get(reqUserInfo.uuid);
-
+		
 		if (orig == null)
-			throw new UserInfoException("Cannot find given UUID", 2);
+			throw new UserInfoException("Cannot find given UUID",2);
 		if (!reqUserInfo.username.equals( orig.username))
-			throw new UserInfoException("Mismatch in username request and stored username", 1);
+			throw new UserInfoException("Mismatch in username request and stored username",1);
 		if (!reqUserInfo.md5passwd.equals( orig.md5passwd))
-			throw new UserInfoException("Incorrect Password!", 0);
+			throw new UserInfoException("Incorrect Password! (DEBUG) "+reqUserInfo.md5passwd+" orig: "+orig.md5passwd,0);
 		/*
 		 * 	public UserInfo(final UUID uuid, final String username, final String md5passwd, 
 				final String realname, final String ipaddr, final Date lastdate) 
 		 */
 		UserInfo noveluser = new UserInfo(
-		                        orig.uuid,
-		                        (newUser.username == null) ? orig.username : newUser.username,
-		                        orig.md5passwd,
-		                        (newUser.realname == null) ? orig.realname : newUser.realname,
-		                        ipaddr,
-		                        new Date()
-		                     );
-
+				orig.uuid,
+				(newUser.username == null) ? orig.username : newUser.username,
+				orig.md5passwd,
+				(newUser.realname == null) ? orig.realname : newUser.realname,
+				ipaddr,
+				new Date()
+				);
+		
 		userdb.put(noveluser.uuid, noveluser);
-		UserInfo result = userdb.get(newUser.uuid);
-
+		UserInfo result = userdb.get(newUser.uuid); 
+		
 		return UserInfo.scrubPassword(result);
 	}
-
+	
 	/**
 	 * This modifies a username as retrieved from reqUserInfo with the information found
 	 * in newUser
@@ -240,34 +241,30 @@ public class IdentityServer implements IdentityUUID
 	 * @param newUser information for the new user information. 
 	 */
 	public UserInfo modifyUserName( UserInfo reqUserInfo, UserInfo newUser)
-	throws UserInfoException, java.rmi.RemoteException
+		throws UserInfoException, java.rmi.RemoteException
 	{
 		String ipaddr = clientaddr();
-		if (reqUserInfo.uuid != null)
-   		UserInfo orig = userdb.get(reqUserInfo.uuid);
-   	else 
-   		UserInfo orig = userDBwrapper.getUserName(reqUserInfo.username);
-
+		UserInfo orig = userDBwrapper.getUserName(reqUserInfo.username);
+		
 		if (orig == null)
-			throw new UserInfoException("Cannot find given Username", 2);
+			throw new UserInfoException("Cannot find given Username",2);
 		if (!reqUserInfo.md5passwd.equals( orig.md5passwd))
-			throw new UserInfoException("Incorrect Password!", 0);
+			throw new UserInfoException("Incorrect Password! (DEBUG) "+reqUserInfo.md5passwd+" orig: "+orig.md5passwd,0);
 		// now create new UserInfo with merged data.
 		UserInfo noveluser = new UserInfo(
-		                        orig.uuid,
-		                        (newUser.username == null) ? orig.username : newUser.username,
-		                        orig.md5passwd,
-		                        (newUser.realname == null) ? orig.realname : newUser.realname,
-		                        ipaddr,
-		                        new Date()
-		                     );
+				orig.uuid,
+				(newUser.username == null) ? orig.username : newUser.username,
+				(newUser.md5passwd == null) ? orig.md5passwd : newUser.md5passwd,
+				(newUser.realname == null) ? orig.realname : newUser.realname,
+				ipaddr,
+				new Date()
+				);
 		// modify the database with the new data
 		userdb.put(noveluser.uuid, noveluser);
-		
 		UserInfo result = userdb.get(noveluser.uuid);
 		return UserInfo.scrubPassword(result);
 	}
-
+	
 	/**
 	 * Retrieve a dump of all users in the database. We just do a dump of the database
 	 * and scrub the passwords for each element. This method isn't very efficient. 
@@ -278,97 +275,101 @@ public class IdentityServer implements IdentityUUID
 		// we dump the entire array
 		// then scrub the passwords
 		// then return them.
-		UserInfo[] tmp = userDBwrapper.toArray();
-		for (int i = 0; i < tmp.length; ++i) {
+		         try {
+			 System.out.println("dont disturb... i am sleeping");
+			 Thread.sleep(1000);
+			} 
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+
+				}
+		UserInfo[] tmp = userDBwrapper.toArray(); 
+		for (int i=0; i<tmp.length; ++i) {
 			tmp[i] = UserInfo.scrubPassword(tmp[i]);
 		}
 		return tmp;
 	}
-
+	
 	/**
 	 * Debugging method, to provide clean database for a new test run
 	 */
 	@SuppressWarnings("unused")
-	private void empty() throws UserInfoException, java.rmi.RemoteException
-	{
+	private void empty() throws UserInfoException, java.rmi.RemoteException {
 		System.err.println("Resetting Database");
 		userDBwrapper = new UserInfoDataBase("defaultUserInfo.db");
 		userdb = userDBwrapper.dbHash;
 	}
-
+	
 	/**
 	 * getUniqueUUID returns a UUID not in the database. The name is not reservered, but createUUID will check again.
 	 *
 	 * @return returns a unique UUID
 	 */
-	public UUID getUniqueUUID( )
-	{
+	public UUID getUniqueUUID( ) {
 		// public UserInfo(String username, String passwd, String realname) {
-		UserInfo tmp = new UserInfo(null, null, null);
+		UserInfo tmp = new UserInfo(null,null,null);
 		while (userdb.containsKey(tmp.uuid))
 			tmp = tmp.setRandomUUID();
 		// reserver uuid with null placement?
 		//userdb.put(tmp.uuid, tmp);
 		return tmp.uuid;
 	}
-
+	
 	/**
 	 * returns server side full copy of user info base on either UUID or username.
 	 * @param user contains either name or UUID to lookup user with.
 	 * @return
 	 * @throws UserInfoException 
 	 */
-	private UserInfo getServerUserInfo(UserInfo user) throws UserInfoException
-	{
+	private UserInfo getServerUserInfo(UserInfo user) throws UserInfoException {
 		if (user == null)
 			return null;
-		UserInfo serveruser;
-
+		UserInfo serveruser;			
+		
 		if (user.username != null)
 			serveruser = userDBwrapper.getUserName(user.username);
 		else if (user.uuid != null)
 			serveruser = userDBwrapper.getUUID(user.uuid);
-		else
+		else 
 			serveruser = null;
-
+		
 		if (user.username != null && user.uuid != null &&
-		    !user.username.equals(serveruser.username) &&
-		    !user.uuid.equals(serveruser.uuid) )
-			throw new UserInfoException("No User Authentication given!", 2);
+				!user.username.equals(serveruser.username) && 
+				!user.uuid.equals(serveruser.uuid) )
+			throw new UserInfoException("No User Authentication given!",2);
 
 		return serveruser;
 	}
-
+	
 	/**
 	 * Tries to authenticate a user with either UUID or username. 
 	 * @param auth contains information from client to use for authenticating.
 	 * @return a full copy of the UserInfo or null on error.
 	 * @throws UserInfoException in case both uuid and name are given and don't match
 	 */
-	private UserInfo authenitcate(UserInfo auth) throws UserInfoException
-	{
+	private UserInfo authenitcate(UserInfo auth) throws UserInfoException {
 		UserInfo serverauth = null;
 		if (auth == null)
-			throw new UserInfoException("No User Authentication given!", 2);
-
+			throw new UserInfoException("No User Authentication given!",2);
+		
 		// get user
 		serverauth = getServerUserInfo(auth);
-
+		
 		if ( serverauth == null )
-			throw new UserInfoException("No UserInfo found!", 2);
-
+			throw new UserInfoException("No UserInfo found!",2);
+		
 		if (!serverauth.md5passwd.equals( auth.md5passwd))
-			throw new UserInfoException("Incorrect Password!", 0);
+			throw new UserInfoException("Incorrect Password! (DEBUG) "+auth.md5passwd+" orig: "+auth.md5passwd,0);
 		else
 			return serverauth;
 	}
-
+	
 	/**
 	* Returns the current clients hosts.
 	* @return the current clients ip address
 	*/
-	private String clientaddr()
-	{
+	private String clientaddr() {
 		String ipaddr;
 		try {
 			ipaddr = UnicastRemoteObject.getClientHost();
@@ -382,85 +383,74 @@ public class IdentityServer implements IdentityUUID
 	}
 
 	public boolean addCalendarEntry(CalendarEntry calEntry, UserInfo auth)
-	throws UserInfoException, RemoteException
+			throws UserInfoException, RemoteException 
 	{
 		boolean retval = true;
 		UserInfo orig = authenitcate(auth);
 		if ( orig == null)
 			return false;
-
+		
 		if (calEntry.uuid == null)
 			calEntry.setUuid(orig.uuid);
-		if (calEntry.id == null)
-			throw new UserInfoException("Null ident", 0);
-
+		
 		caldb.addEntry(calEntry);
-
-		// System.out.println("SDEBUG: add calEntry: "+calEntry);
-		// System.out.println("SDEBUG: db: "+caldb.getEntry(calEntry));
-
+		
+		System.out.println("debug called addCalendarEntry: "+clientaddr());
 		return retval;
 	}
 
 	public boolean deleteCalendarEntry(CalendarEntry calEntry, UserInfo auth)
-	throws UserInfoException, RemoteException
-	{
+			throws UserInfoException, RemoteException {
 		// TODO Auto-generated method stub
-		boolean retval = false;
+		boolean retval = true;
 		// TODO Auto-generated method stub
 		UserInfo orig = authenitcate(auth);
-
-		if (orig == null) {
+		
+		if (orig == null)
+		{
 			retval = false;
-			throw new UserInfoException("Cannot find given Username", 2);
+			throw new UserInfoException("Cannot find given Username",2);
+			
 		}
-
+	
 		if (calEntry.uuid == null)
 			calEntry.setUuid(orig.uuid);
-		if (calEntry.id == null)
-			throw new UserInfoException("Null ident", 0);
-
-		retval = caldb.delEntry(calEntry);
-
-//		System.out.println("");
-
-		// System.out.println("debug called delete entry: "+calEntry);
+		
+		caldb.delEntry(calEntry);
+		
+		System.out.println("debug called addCalendarEntry: "+clientaddr());
 		return retval;
 	}
 
-	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo, UserInfo auth, boolean modePublic)
-	throws UserInfoException, RemoteException
-	{
+	public CalendarEntry[] displayCalendarEntries(UserInfo newUserinfo, UserInfo auth, boolean modePublic) 
+		throws UserInfoException, RemoteException {
 		UserInfo orig = authenitcate(auth);
-
+		
 		if (orig == null)
-			throw new UserInfoException("Cannot find given Username", 2);
-
+			throw new UserInfoException("Cannot find given Username",2);
+		
 		UserInfo val = userDBwrapper.getUserName(newUserinfo.username);
-		if (val != null) {
-
-
-			ArrayList<CalendarEntry> tmp = new ArrayList<CalendarEntry>(200);
-			ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(val.uuid);
-for ( CalendarEntry entry : userhm.values() ) {
-				// check for modePublic and event is public
-				// or modePublic is not public (is false) then add
-				if ( (modePublic && entry.status.equals("public")) || !modePublic )
-					tmp.add(entry);
-			}
-
-			return tmp.toArray(new CalendarEntry[0]);
+		if(val!=null)
+		{
+			
+			
+		ArrayList<CalendarEntry> tmp = new ArrayList<CalendarEntry>(200);
+		ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(val.uuid);
+		for ( CalendarEntry entry : userhm.values() ) {
+			// check for modePublic and event is public
+			// or modePublic is not public (is false) then add
+			if ( (modePublic && entry.status.equals("public")) || !modePublic )
+				tmp.add(entry);
+		}
+			
+		return tmp.toArray(new CalendarEntry[0]);
 		}
 		else
 			return null;
-
+	
 	}
-
-	/**
-	* Return an array of empty time slots, with time broken into pre-given array sizes.
-	*/
 	public ArrayList<Date> getFreeTimeSlots(UserInfo newUserinfo, UserInfo auth,
-	                                        long req_Start_time, long req_Stop_time)
+				long req_Start_time,long req_Stop_time) 
 	throws UserInfoException, RemoteException, ParseException
 	{
 		UserInfo orig = authenitcate(auth);
@@ -469,56 +459,63 @@ for ( CalendarEntry entry : userhm.values() ) {
 			throw new UserInfoException("Cannot find given Username", 2);
 
 		UserInfo val = userDBwrapper.getUserName(newUserinfo.username);
-		if (val == null)
+		if (val != null)
+		{
+
+			
+			ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(val.uuid);
+			long time_slice = 1 * 60 * 60 * 1000;
+			int slot_num = (int) ((req_Stop_time - req_Start_time) / time_slice);
+			boolean[] timeArray = new boolean[slot_num];
+			
+			ArrayList<Date> Datelist = new ArrayList<Date>(slot_num);
+			for (int i = 0; i < slot_num; i++)
+			{
+				timeArray[i] = true;
+			}
+
+			for (CalendarEntry entry : userhm.values())
+			{
+				long file_Start_Time = entry.datetime.getTime();
+				long file_dur_milliSec = entry.duration * 60 * 1000;
+				long file_End_Time = file_Start_Time + file_dur_milliSec;
+				int pos1 = (int) ((file_Start_Time - req_Start_time) / time_slice);
+				int pos2 = (int) ((file_End_Time - req_Start_time) / time_slice);
+				if ((pos1 >= 0 && pos1 <= slot_num))
+				{
+					timeArray[pos1] = false;
+					System.out.println("Slot :"+pos1+ "Occupied");
+				}
+				else if ((pos2 >= 0 && pos2 <= slot_num))
+				{
+					timeArray[pos2] = false;
+					System.out.println("Slot :"+pos2+ "Occupied");
+				}
+			}
+			String dfr = "MM/dd/yyyy hh:mma";
+			SimpleDateFormat formatter = new SimpleDateFormat(dfr);
+			
+
+			for (int i = 0; i < slot_num; i++)
+			{
+				if (timeArray[i] == true)
+				{
+					System.out.println("Slot :"+i+ "Free");
+					long free_time = (req_Start_time + (i * time_slice));
+					Date tmp = new Date(free_time);
+					Datelist.add(tmp);
+				}
+
+			}
+			return Datelist;
+
+		}
+		else
 			return null;
 
-		ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(val.uuid);
-		long time_slice = 1 * 30 * 60 * 1000;  /* half an hour */
-		int slot_num = (int) ((req_Stop_time - req_Start_time) / time_slice);
-		boolean[] timeArray = new boolean[slot_num];
-
-		ArrayList<Date> Datelist = new ArrayList<Date>(slot_num);
-		for (int i = 0; i < slot_num; i++) {
-			timeArray[i] = true;
-		}
-
-
-for (CalendarEntry entry : userhm.values()) {
-			long file_Start_Time = entry.datetime.getTime();
-			long file_dur_milliSec = entry.duration * 60 * 1000;
-			long file_End_Time = file_Start_Time + file_dur_milliSec;
-
-			int pos1 = (int) ((file_Start_Time - req_Start_time) / time_slice);
-			int pos2 = (int) ((file_End_Time - req_Start_time) / time_slice);
-
-			if ((pos1 >= 0 && pos1 <= slot_num)) {
-				timeArray[pos1] = false;
-				System.out.println("Slot :" + pos1 + "Occupied");
-			}
-			else if ((pos2 >= 0 && pos2 <= slot_num)) {
-				timeArray[pos2] = false;
-				System.out.println("Slot :" + pos2 + "Occupied");
-			}
-		}
-
-		String dfr = "MM/dd/yyyy hh:mma";
-		SimpleDateFormat formatter = new SimpleDateFormat(dfr);
-
-		for (int i = 0; i < slot_num; i++) {
-			if (timeArray[i] == true) {
-				System.out.println("Slot :" + i + "Free");
-				long free_time = (req_Start_time + (i * time_slice));
-				Date tmp = new Date(free_time);
-				Datelist.add(tmp);
-			}
-
-		}
-		return Datelist;
-
 	}
-
+	
 }
-
 
 
 
