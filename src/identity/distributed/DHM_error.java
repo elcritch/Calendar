@@ -13,7 +13,7 @@ public class DHM_error extends DHmsg {
 	 * 
 	 */
 	private static final long serialVersionUID = -1255012547679559188L;
-String error_msg;
+    String error_msg;
   
    /**
     * @param type

@@ -154,7 +154,8 @@ class ServerConnection extends Thread implements Types
 			case   VOTE_BEGIN: 
 				performVoteBegin(vote);
 				break;
-			case VOTE_REQUEST: 
+			case VOTE_REQUEST:
+			   // respond back with wether we have our given message
 				break;
 			case  VOTE_COMMIT: 
 				break;
@@ -177,28 +178,37 @@ class ServerConnection extends Thread implements Types
 		}
 
 		/* ------------------------------------------------------------------------------- */
-		private void performVoteBegin(DHM_vote vote) throws ProcessException {
+		/**
+		
+		
+		*/
+		private void performVoteBegin(DHM_vote initmsg) throws ProcessException {
 			if (share.clock.checkCoordinator() ) {
 				// begin vote process
 				// send vote_request objects to all servers
 				// receive responses back
+				DHM_vote vote = new DHM_vote(VOTE_BEGIN,initmsg.lamport);
+				
+				// sendAndReceiveAll should perform error checking in that it should
+				// try to send data to nodes until they respond back with VOTE_COMMIT
 				DHmsg[] results = sendAndReceiveAll(vote);
-
-				// if all checkout, then send vote_commit
-
+		
+				// if all checkout, then send do_commit
+				boolean check = true;
+            for (DHMsg r : results) {
+               if (!( r!=null && (r instanceof DHM_vote) && r.type == VOTE_COMMIT ))
+                  check = false;
+            }
+            
+            // we shouldn't need to do error checking here?
+            // checkpoint should catch any more errors
+            sendAll(new DHM_vote(DO_COMMIT) );
 
 			} else {
 				// not coordinator, send back error message
 				DHM_error error = new DHM_error(vote,"Not Coordinator. Cannot begin a commit process.");
 				throw new ProcessException(error);
 			}
-
-			//			try {
-			//			} catch (IOException e) {
-			//			e.printStackTrace();
-			//			DHM_error error = new DHM_error(vote,"IOException");
-			//			throw new ProcessException(error);
-			//			}
 		}
 
 		@SuppressWarnings("unused")
@@ -206,6 +216,11 @@ class ServerConnection extends Thread implements Types
 			PrintColor.red("Cannot Process Stand DHM: NOT IMPLEMENTED");
 		}
 
+
+ß
+      /**
+      Run method, this starts a new server response thread
+      */
 		public void run()
 		{
 			// we connect to client, read in their message and process it. Then we leave.
@@ -271,8 +286,12 @@ class ServerConnection extends Thread implements Types
 		}
 
 		/* ------------------------------------------------------------------------------- */
-
 		// methods for distributed messages
+		
+		/**
+		
+		
+		*/
 		protected DHmsg[] sendAndReceiveAll(DHmsg dhm) throws ProcessException
 		{
 			// this method will send the message to the coord queue
@@ -322,73 +341,97 @@ class ServerConnection extends Thread implements Types
 			}	   
 		}
 
-		class SenderVote extends Thread {
-			DHmsg msg = null;
-			InetAddress host = null;
-			DHmsg result = null;
-			private Semaphore semaphore = null;
-			private ObjectInputStream connect_in;
-			private ObjectOutputStream connect_out;
-			private Socket s;
-			
-			SenderVote(InetAddress host, DHmsg msg) { 
-				this.msg = msg;
-				this.host = host;
-			}
-			public SenderVote(InetAddress inetAddress, DHmsg dhm, Semaphore semaphore) {
-				this(inetAddress, dhm);
-				this.semaphore  = semaphore;
-			}
-			public void run() {
-				try {
-					if (semaphore != null)
-						semaphore.acquire();
-					s = new Socket(host, port);
-					connect_in = new ObjectInputStream(s.getInputStream());
-					connect_out = new ObjectOutputStream(s.getOutputStream());
 
-					connect_out.writeUnshared(msg);
-					
-					result = (DHmsg) connect_in.readUnshared();
-					respond();
-					
-					// close
-					connect_in.close();
-					connect_out.flush();
-					connect_out.close();
-					s.close();
-				}
-				catch (ClassCastException cce) {
-					result = null;
-				}
-				catch (IOException e1) {
-					PrintColor.red("error: sending DHM: "+msg+" to: "+host);
-					System.out.println(e1);
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			protected void respond() {
-				try {
-					DHmsg dhm;
-					 while (s.isConnected()) {
-						dhm = (DHmsg) connect_in.readUnshared();
-					}
-				} catch (EOFException e) {
-					
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
+      /**
+      SenderVote subclass sends a message to a server, if there is any response 
+      it processess it according to an overridable "respond()" method. 
+      
+      In the SenderVote case, we want to send a vote_co
+      
+      */
+      class Sender extends Thread {
+         DHmsg msg = null;
+         DHmsg result = null;
+         public Semaphore semaphore = null;
+         InetAddress host = null;
+         
+         public ObjectInputStream connect_in;
+         public ObjectOutputStream connect_out;
+         public Socket s;
+         
+         SenderVote(InetAddress host, DHmsg msg) { 
+            this.msg = msg;
+            this.host = host;
+         }
+
+         public void run() {
+            try {
+               if (semaphore != null)
+                  semaphore.acquire();
+               s = new Socket(host, port);
+               connect_in = new ObjectInputStream(s.getInputStream());
+               connect_out = new ObjectOutputStream(s.getOutputStream());
+
+               connect_out.writeUnshared(msg);
+               
+               result = (DHmsg) connect_in.readUnshared();
+               respond();
+               
+               // close
+               connect_in.close();
+               connect_out.flush();
+               connect_out.close();
+               s.close();
+               
+               // shoule we release semaphore here or before we close the connection?
+               semaphore.release();
+            }
+            catch (ClassCastException cce) {
+               result = null;
+            }
+            catch (IOException e1) {
+               PrintColor.red("error: sending DHM: "+msg+" to: "+host);
+               System.out.println(e1);
+            } catch (ClassNotFoundException e) {
+               // TODO Auto-generated catch block
+               e.printStackTrace();
+            } catch (InterruptedException e) {
+               // TODO Auto-generated catch block
+               e.printStackTrace();
+            }
+         }
+         protected void respond() {
+            return; // do nothing for basic Sender Thread
+         }
+      }
+      
+      class SenderVote extends Sender {
+         public Semaphore semaphore = null;
+         
+         public SenderVote(InetAddress inetAddress, DHmsg dhm, Semaphore semaphore) {
+            super(inetAddress, dhm);
+            this(inetAddress, dhm);
+            this.semaphore  = semaphore;
+         }
+         
+         protected void respond() {
+            try {
+               DHmsg dhm;
+                while (s.isConnected()) {
+                  dhm = (DHmsg) connect_in.readUnshared();
+                  
+               }
+            } catch (EOFException e) {
+               
+            } catch (IOException e) {
+               // TODO Auto-generated catch block
+               e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+               // TODO Auto-generated catch block
+               e.printStackTrace();
+            }
+         }
+      }
 
 		class ProcessException extends Exception {
 			private static final long serialVersionUID = 839187662031418327L;

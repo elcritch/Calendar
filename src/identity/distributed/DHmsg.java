@@ -24,6 +24,8 @@ abstract class DHmsg implements Serializable, Types
 	   this.type = type;
 	   this.lamport = new Lamport( CoordLock.getLamport(), CoordLock.getCoordsession());
 	}
+	protected DHmsg() {
+	}
 	
 	public String toString() {
 	   String tostring = "";
@@ -32,5 +34,6 @@ abstract class DHmsg implements Serializable, Types
 	   tostring += "lamport "+lamport;
 	   return tostring;
 	}
+	
 }
 
