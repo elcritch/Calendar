@@ -11,14 +11,14 @@ import java.io.*;
 public class ElectionLock
 {
    boolean election = false;
-   public static Coordinator_Message obj ;
+   
    
 	public synchronized void startElection( )
 	{
 	   election = true;
 	}
 
-	public synchronized Coordinator_Message waitForElection( )
+	public synchronized void waitForElection( )
 	{
 		boolean interrupted = false;
 		while (election) {
@@ -30,15 +30,14 @@ public class ElectionLock
 			}
 		}
 		if (interrupted) Thread.currentThread().interrupt();
-		return obj;
+		
 	}
 
-	public synchronized void endElection(Coordinator_Message objct )
+	public synchronized void endElection()
 	{
       election = false;
 		notifyAll();
-		obj = objct;
-		
+	
 	}
 
 }

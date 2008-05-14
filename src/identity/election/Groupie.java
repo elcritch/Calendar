@@ -1,7 +1,5 @@
 package identity.election;
 
-import identity.server.SharedData;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -411,7 +409,9 @@ public class Groupie extends Thread
 		PrintColor.ansi = true;
 		SharedData shared = new SharedData();
 		try {
+
 			Groupie g = new Groupie(shared);
+
 			// NEW TEST!
 			// NEW DOUBLE!
 			if (args.length>0) {

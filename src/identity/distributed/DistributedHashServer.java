@@ -177,31 +177,29 @@ class ServerConnection extends Thread implements Types
 		}
 
 		/* ------------------------------------------------------------------------------- */
-				private void performVoteBegin(DHM_vote vote) throws ProcessException {
-					if (share.clock.checkCoordinator() ) {
-						// begin vote process
-						// send vote_request objects to all servers
-		
-						sendAndReceiveAll(vote);
-		
-						// receive responses back
-						
-						// if all checkout, then send vote_commit
-		
-		
-					} else {
-						// not coordinator, send back error message
-						DHM_error error = new DHM_error(vote,"Not Coordinator. Cannot begin a commit process.");
-						throw new ProcessException(error);
-					}
-					
-		//			try {
-		//			} catch (IOException e) {
-		//			e.printStackTrace();
-		//			DHM_error error = new DHM_error(vote,"IOException");
-		//			throw new ProcessException(error);
-		//			}
-				}
+		private void performVoteBegin(DHM_vote vote) throws ProcessException {
+			if (share.clock.checkCoordinator() ) {
+				// begin vote process
+				// send vote_request objects to all servers
+				// receive responses back
+				DHmsg[] results = sendAndReceiveAll(vote);
+
+				// if all checkout, then send vote_commit
+
+
+			} else {
+				// not coordinator, send back error message
+				DHM_error error = new DHM_error(vote,"Not Coordinator. Cannot begin a commit process.");
+				throw new ProcessException(error);
+			}
+
+			//			try {
+			//			} catch (IOException e) {
+			//			e.printStackTrace();
+			//			DHM_error error = new DHM_error(vote,"IOException");
+			//			throw new ProcessException(error);
+			//			}
+		}
 
 		@SuppressWarnings("unused")
 		private void process(DHmsg msg) {
@@ -281,13 +279,13 @@ class ServerConnection extends Thread implements Types
 			InetAddress[] servers = share.servers.toArray();
 
 			// connect to each server in the list, including our own
-			Sender[] sender = new Sender[servers.length];
+			SenderVote[] sender = new SenderVote[servers.length];
 			DHmsg[] results = new DHmsg[servers.length];
 			Semaphore semaphore = new Semaphore(servers.length);
 			
 			for (int i = 0; i<servers.length; i++) {
 				// we don't need to do error checking here, the server will take care of that. 
-				sender[i] = new Sender(servers[i],dhm, semaphore);
+				sender[i] = new SenderVote(servers[i],dhm, semaphore);
 				sender[i].start();
 			}
 			// sleep for a bit. we could join all threads, but this should give us enough delay?
@@ -298,7 +296,7 @@ class ServerConnection extends Thread implements Types
 				}
 				
 				int i = 0;
-				for (Sender sent : sender) {
+				for (SenderVote sent : sender) {
 					results[i++] = sent.result;
 				}
 				return results;
@@ -324,31 +322,41 @@ class ServerConnection extends Thread implements Types
 			}	   
 		}
 
-		class Sender extends Thread {
+		class SenderVote extends Thread {
 			DHmsg msg = null;
 			InetAddress host = null;
 			DHmsg result = null;
 			private Semaphore semaphore = null;
+			private ObjectInputStream connect_in;
+			private ObjectOutputStream connect_out;
+			private Socket s;
 			
-			Sender(InetAddress host, DHmsg msg) { 
+			SenderVote(InetAddress host, DHmsg msg) { 
 				this.msg = msg;
 				this.host = host;
 			}
-			public Sender(InetAddress inetAddress, DHmsg dhm, Semaphore semaphore) {
+			public SenderVote(InetAddress inetAddress, DHmsg dhm, Semaphore semaphore) {
 				this(inetAddress, dhm);
 				this.semaphore  = semaphore;
 			}
 			public void run() {
 				try {
-					semaphore.acquire();
-					Socket s = new Socket(host, port);
-					ObjectInputStream connect_in = new ObjectInputStream(s.getInputStream());
-					ObjectOutputStream connect_out = new ObjectOutputStream(s.getOutputStream());
+					if (semaphore != null)
+						semaphore.acquire();
+					s = new Socket(host, port);
+					connect_in = new ObjectInputStream(s.getInputStream());
+					connect_out = new ObjectOutputStream(s.getOutputStream());
 
 					connect_out.writeUnshared(msg);
-					connect_out.close();
 					
 					result = (DHmsg) connect_in.readUnshared();
+					respond();
+					
+					// close
+					connect_in.close();
+					connect_out.flush();
+					connect_out.close();
+					s.close();
 				}
 				catch (ClassCastException cce) {
 					result = null;
@@ -363,7 +371,17 @@ class ServerConnection extends Thread implements Types
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-			} 	      
+			}
+			protected void respond() {
+				try {
+					DHmsg dhm;
+					 while (s.isConnected()) {
+						dhm = (DHmsg) connect_in.readUnshared();
+					}
+						
+					}
+				} 
+			}
 		}
 
 		class ProcessException extends Exception {
