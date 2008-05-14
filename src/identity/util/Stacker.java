@@ -11,7 +11,7 @@ package identity.util;
 public class Stacker {
     public static void stack() {
 
-       StackTraceElement cst = Thread.currentThread().getStackTrace()[3];
+       StackTraceElement cst = Thread.currentThread().getStackTrace()[1];
        for (int i = 3; i<Thread.currentThread().getStackTrace().length; ++i)
           System.out.print("-");
        

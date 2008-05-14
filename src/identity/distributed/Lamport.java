@@ -1,5 +1,6 @@
 package identity.distributed;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
@@ -8,8 +9,10 @@ import java.util.UUID;
  * @author Jaremy Creechley &lt;&gt;
  * @version $Rev$
  */
-public final class Lamport {
-   // msgid is a lamport time of the message
+public final class Lamport implements Serializable {
+
+	private static final long serialVersionUID = -6882203990787113636L;
+// msgid is a lamport time of the message
 	public Long msgid;
 	// we include the unique coordinator UUID for further checking
 	public UUID coord;

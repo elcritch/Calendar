@@ -17,9 +17,14 @@ public class CoordLock
 {
 	private boolean coord = false;
 	private InetAddress coordip;
-	private static UUID coordsession;
-	private static AtomicLong lamport;
-
+	private static UUID coordsession = UUID.randomUUID();
+	private static AtomicLong lamport = new AtomicLong(0);
+	private ElectionLock coordWait = new ElectionLock();
+	
+	public CoordLock() {
+		coordWait.startElection();
+	}
+	
 	public synchronized void notCoord( )
 	{
 		coord = false;
@@ -57,7 +62,7 @@ public class CoordLock
 	public synchronized void setCoordInetAddress(InetAddress coordip) {
 		this.coordip = coordip;
 		InetAddress myaddr = null;
-
+		coordWait.endElection();
 		// set becomeCoordinator if my ip address equals that of the new coordip.
 		try {
 			myaddr = InetAddress.getLocalHost();
@@ -93,5 +98,11 @@ public class CoordLock
 	public synchronized boolean checkCoordinator() {
 	   return coord;
 	}
+
+	public void waitForCoord() {
+		// TODO Auto-generated method stub
+		coordWait.waitForElection();
+	}
+
 }
 

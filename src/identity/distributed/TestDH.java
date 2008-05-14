@@ -1,8 +1,11 @@
 package identity.distributed;
 
+import java.security.acl.Group;
 import java.util.UUID;
 
 import identity.calendar.CalendarEntry;
+import identity.election.ElectionMonitor;
+import identity.election.Groupie;
 import identity.server.SharedData;
 import identity.server.UserInfo;
 import identity.util.PrintColor;
@@ -17,7 +20,10 @@ public class TestDH implements Types{
 		
 		PrintColor.type = 1;
 
+		
 		SharedData data = new SharedData();
+		Groupie g = new Groupie(data);
+		
 		int dhmport = 5294;
 		DistributedHashServer dhserver = new DistributedHashServer( data, dhmport);
 
@@ -27,8 +33,9 @@ public class TestDH implements Types{
 		System.out.println("Starting DH test");
 		
 		DistributedHash dh = new DistributedHash(data);
+		ElectionMonitor elecm = new ElectionMonitor("monitor",data);
+		elecm.start();
 		
-
 		//
 		CalendarEntry cal1 = new CalendarEntry(UUID.randomUUID(), 23, null,"stat","desc",90 );
 		CalendarEntry cal2 = new CalendarEntry(UUID.randomUUID(), 23, null,"stat","desc",90 );

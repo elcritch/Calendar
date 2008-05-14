@@ -35,7 +35,7 @@ public class ElectionMonitor extends Thread
 	public SharedData share;
 
 	//Constructor
-	public ElectionMonitor(String threadName,SharedData sharedData ) throws SocketException
+	public ElectionMonitor(String threadName,SharedData sharedData )
 	{
 		super(threadName);
 		

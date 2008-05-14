@@ -47,7 +47,9 @@ public class DistributedHash implements Types
 		// send the VOTE_BEGIN message to the coordinator
 		/* note: this will result in a socketimeout error if unsucessfull */
 		try {
+			share.clock.waitForCoord();
 			sendDHM(share.clock.getCoordInetAddress(), new DHM_vote(VOTE_BEGIN));
+			
 		} catch (SocketTimeoutException e) {
 			return false;
 		}
