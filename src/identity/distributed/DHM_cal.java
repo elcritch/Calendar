@@ -10,13 +10,16 @@ import identity.calendar.CalendarEntry;
  */
 public final class DHM_cal extends DHmsg {
     
-    protected Integer id;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -4150261328407458673L;
+	
+	protected Integer id;
     protected CalendarEntry entry;
     
-    /**
-     * 
-     */
-    public DHM_cal() {
-        
-    }
+	public DHM_cal(int vote_msg, CalendarEntry entry) {
+		super(vote_msg);
+		this.entry = entry;
+	}
 }

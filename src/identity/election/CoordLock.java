@@ -9,12 +9,16 @@ package identity.election;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class CoordLock
 {
 	private boolean coord = false;
 	private InetAddress coordip;
+	private static UUID coordsession;
+	private static AtomicLong lamport;
 
 	public synchronized void notCoord( )
 	{
@@ -43,22 +47,50 @@ public class CoordLock
 
 	public synchronized void setCoordInetAddress(Integer coordip) {
 		try {
-			this.coordip = InetAddress.getByAddress(Utility.getBytes(coordip));
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			setCoordInetAddress( InetAddress.getByAddress(Utility.getBytes(coordip)) );
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
 	public synchronized void setCoordInetAddress(InetAddress coordip) {
 		this.coordip = coordip;
+		InetAddress myaddr = null;
+
+		// set becomeCoordinator if my ip address equals that of the new coordip.
+		try {
+			myaddr = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		if ( (coordip != null) && coordip.equals(myaddr)) {
+			becomeCoordinator();
+			CoordLock.coordsession = UUID.randomUUID();
+			CoordLock.lamport = new AtomicLong(0);
+		} else {
+			this.coord = false;
+			CoordLock.coordsession = null;
+			CoordLock.lamport = null;
+		}
+
 	}
 
 	public synchronized InetAddress getCoordInetAddress() {
 		return coordip;
+	}
+
+	public static synchronized UUID getCoordsession() {
+		return coordsession;
+	}
+	
+	public static synchronized Long getLamport() {
+		return CoordLock.lamport.incrementAndGet();
+	}
+	
+	public synchronized boolean checkCoordinator() {
+	   return coord;
 	}
 }
 

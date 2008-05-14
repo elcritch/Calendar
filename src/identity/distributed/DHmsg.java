@@ -1,5 +1,7 @@
 package identity.distributed;
 
+import identity.election.CoordLock;
+
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -13,16 +15,14 @@ abstract class DHmsg implements Serializable, Types
 {
 
    protected int type;
-   protected Long lamport;
+   protected Lamport lamport;
    protected UUID coord;
 
-   public DHmsg() 
-    {}
-   
-	public DHmsg(int type, Long lamport)
+ 
+	public DHmsg(int type)
 	{
 	   this.type = type;
-	   this.lamport = lamport;
+	   this.lamport = new Lamport( CoordLock.getLamport(), CoordLock.getCoordsession());
 	}
 	
 	public String toString() {

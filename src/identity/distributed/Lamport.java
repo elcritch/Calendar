@@ -1,5 +1,7 @@
 package identity.distributed;
 
+import java.util.UUID;
+
 /**
  * <<Class summary>>
  *

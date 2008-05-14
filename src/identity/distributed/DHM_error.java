@@ -9,20 +9,18 @@ package identity.distributed;
  */
 public class DHM_error extends DHmsg {
 
-   String error_msg;
-	/**
+   /**
 	 * 
 	 */
-	public DHM_error() {
-		// TODO Auto-generated constructor stub
-	}
-
+	private static final long serialVersionUID = -1255012547679559188L;
+String error_msg;
+  
    /**
     * @param type
     * @param lamport
     */
    public DHM_error(String error_msg) {
-      super(ERROR, ERROR);
+      super(ERROR);
       this.error_msg = error_msg;
    }
 
@@ -31,7 +29,7 @@ public class DHM_error extends DHmsg {
     * @param lamport
     */
    public DHM_error(DHmsg msg, String error_msg) {
-      super(msg.type, msg.lamport);
+      super(msg.type);
       this.error_msg = error_msg;
    }
 

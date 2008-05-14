@@ -1,5 +1,7 @@
 package identity.distributed;
 
+import identity.server.UserInfo;
+
 /**
  * <<Class summary>>
  *
@@ -8,11 +10,17 @@ package identity.distributed;
  */
 public final class DHM_user extends DHmsg {    
     
-    protected UserInfo user;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 2914328767380352429L;
+	
+	protected UserInfo user;
     /**
      * 
      */
-    public DHmsg() {
-        
-    }
+	public DHM_user(int vote_msg, UserInfo user) {
+		super(vote_msg);
+		this.user = user;
+	}
 }

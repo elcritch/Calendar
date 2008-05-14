@@ -9,6 +9,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.net.InetAddress;
@@ -25,21 +26,18 @@ class ElectionMonitor extends Thread
 	public static Socket client;
 	public static Node nodeObj;
 	public static int port =5235;
-	public static InetAddress Coordinator_IP =null;
-	public static int Coordinator_ID ;
+
 	public static Timer timer = new Timer();
-	public  String nextIp ;
-	public static int nextPort  =5235;
-	public ElectionLock lock;
+	public SharedData share;
+
 	//Constructor
-	ElectionMonitor(InetAddress node_ip,int node_id,String s, ElectionLock lock) throws SocketException
+	ElectionMonitor(String threadName,SharedData sharedData ) throws SocketException
 	{
-		super(s);
+		super(threadName);
 		
-		nodeObj = new Node(node_ip,node_id);
-		this.lock = lock ;
-
-
+		
+		this.share =sharedData;
+		nodeObj = new Node(sharedData.selfaddress, sharedData.selfaddress.hashCode());
 		setPriority(NORM_PRIORITY - 1);
 		
 
@@ -58,14 +56,15 @@ class ElectionMonitor extends Thread
 				{
 					
 					try {
-						if(Coordinator_IP ==null)
+						if(share.clock.getCoordInetAddress() ==null)
 							throw new IOException("Initial ");
-						if(!nodeObj.getIp().equals(Coordinator_IP))
+						if(!nodeObj.getIp().equals(share.clock.getCoordInetAddress()))
 						{
-							Coordinator_Message objct =lock.waitForElection();
+							share.elock.waitForElection();
 							
-							Coordinator_IP = objct.getCoordinator_Ip();
-							Coordinator_ID = objct.getCoordinator_Id();
+							
+							InetAddress Coordinator_IP  = share.clock.getCoordInetAddress();
+							int Coordinator_ID = share.clock.getCoordInetAddress().hashCode();
 							
 							 client = new Socket(Coordinator_IP,port);
 							 client.setSoTimeout(7000);		
@@ -97,14 +96,12 @@ class ElectionMonitor extends Thread
 								// Get the next neighbour and send the election message
 								System.out.println("get next neighbour to send election message");
 							}
-							lock.startElection();
+							share.elock.startElection();
 							
-							Coordinator_Message objct =lock.waitForElection();
+							share.elock.waitForElection();
 							
-							Coordinator_IP = objct.getCoordinator_Ip();
-							Coordinator_ID = objct.getCoordinator_Id();
 							System.out.println("Lock Released...");
-							System.out.println("election monitor..cooop is :"+Coordinator_IP);
+							System.out.println("election monitor..cooop is :"+share.clock.getCoordInetAddress());
 							
 						//}
 					} 
@@ -182,22 +179,59 @@ class ElectionMonitor extends Thread
 	}
 	
 	//Method to send data
-	public  void sendMessage(Object dataObj) throws IOException 
+//	Method to forward Data to Client
+	public  void sendMessage(Object dataObj) 
 	{
-
+			Iterator<InetAddress> iterate = share.servers.iterator(); 
 			//Create a Socket to connect to next node
+			InetAddress nextIp =null;
+			
 			Socket s;
-
-				s = new Socket(nextIp, nextPort);
+			boolean forwarded =false;
+			
+			while(iterate.hasNext() && forwarded==false)
+			{
+				nextIp = iterate.next();
+				
+				
+				if(nextIp==null)
+					break;
+				System.out.println("Next Ip is :"+nextIp);
+			try
+			{
+				
+				s = new Socket(nextIp, port);
+				
 				if(s.isConnected())
 				{
-					System.out.println(s.getInetAddress() +" on Port : "+s.getPort());
-					ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
-					out.writeUnshared(dataObj);
-					out.flush();
+				System.out.println("sending............ ....");
+				ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
+				out.writeUnshared(dataObj);
+				out.flush();
+				forwarded =true;
 				}
 				else
-					throw new IOException("Failed to send to neighbour ");
-	
+				{
+					System.out.println("Getting the next neighbour in the list ...forward failed ");
+					throw new IOException();
+				}
+				
+			}
+			catch (IOException e)
+			{
+				// TODO Auto-generated catch block
+				System.out.println("Getting the next neighbour in the list ");
+				
+				//e.printStackTrace();
+			}
+			
+			}
+			if(forwarded==false)
+			{
+				System.out.println("Declaring myself as Coordinator");
+				share.clock.setCoordInetAddress(share.selfaddress);
+			}
+			
 	}
+	
 }

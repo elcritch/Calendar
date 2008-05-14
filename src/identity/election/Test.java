@@ -1,3 +1,7 @@
+package identity.election;
+
+
+
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -5,21 +9,29 @@ import java.net.UnknownHostException;
 
 public class Test
 {
-	public static void main(String[] args)
+	public static void main(String[] args) throws InterruptedException
 	{
 		try
 		{
+			SharedData share =new SharedData();
 			ElectionLock lock = new ElectionLock();
-			InetAddress inet = InetAddress.getLocalHost();
+			InetAddress selfIp = InetAddress.getLocalHost();
+			PrintColor.ansi = true;
 			
-			//String localHost = inet.getHostAddress();
-			System.out.println("Local ip addr :"+inet);
-			int pid =Integer.parseInt(args[1]);
-			ElectionListener listen = new ElectionListener(inet,pid,"ElectionListener",lock);
-			ElectionMonitor monitor = new ElectionMonitor(inet,pid,"ElectionMonitor",lock);
-			monitor.nextIp = args[0];
+			share.elock = lock;
+			share.selfaddress = selfIp;
+			share.servers =  new ServerList(selfIp);
+			share.clock = new CoordLock();
+			Groupie g = new Groupie(share);
+			System.out.println("Local ip addr :"+selfIp);
+			
+			ElectionListener listen = new ElectionListener("ElectionListener",share);
+			ElectionMonitor monitor = new ElectionMonitor("ElectionMonitor",share);
+			
+			
+		
+			g.start();
 			monitor.start();
-			listen.nextIp = args[0];
 			listen.runListener();
 			
 

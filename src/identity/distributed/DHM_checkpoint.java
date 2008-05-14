@@ -8,14 +8,19 @@ package identity.distributed;
  *
  */
 public class DHM_checkpoint extends DHmsg {
+	public int checksum;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8098519733248856130L;
 
 	/**
 	 * @param type
 	 * @param lamport
 	 */
-	public DHM_checkpoint(int type, Long lamport, int vote_msg) {
-		super(type, lamport);
-		this.type = vote_msg;
+	public DHM_checkpoint(int type, int checksum) {
+		super(type);
+		this.checksum = checksum;
 	}
 
 }
