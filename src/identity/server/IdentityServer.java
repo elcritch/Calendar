@@ -7,8 +7,8 @@ import identity.election.ElectionListener;
 import identity.election.ElectionLock;
 import identity.election.ElectionMonitor;
 import identity.election.Groupie;
-import identity.election.PrintColor;
 import identity.election.ServerList;
+import identity.util.PrintColor;
 
 import java.io.File;
 import java.io.IOException;
@@ -209,6 +209,8 @@ public class IdentityServer implements IdentityUUID
 			
 		//System.out.println("Added user to userdb :"+newUser.md5passwd);
 		userdb.put(newUser.uuid, newUser);
+		
+		// test the action
 		UserInfo test = userdb.get(newUser.uuid); 
 		System.err.println("Created: " );
 

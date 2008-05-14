@@ -13,7 +13,7 @@ public class ElectionListener
 	ServerSocket ss;
 	int port = 5235;
 	//Server Timeout
-	//public static int SERVER_TIMEOUT = 120000; //2 min in milliseconds
+	public static int SERVER_TIMEOUT = 120000; //2 min in milliseconds
 
 	int Self_id=0;
 	String threadName;
@@ -50,14 +50,14 @@ public class ElectionListener
 			while (true)
 			{
 				//set the server timeout
-				//ss.setSoTimeout(SERVER_TIMEOUT);
+				ss.setSoTimeout(SERVER_TIMEOUT);
 
 				//Accept the connection from client
 				client = ss.accept();
 						
 					String clientName = client.getInetAddress().getHostName();
 					String clientaddr = client.getInetAddress().getHostAddress();
-					//System.out.println("Received connect from " + clientName + " and " + clientaddr);
+					System.out.println("Received connect from " + clientName + " and " + clientaddr);
 					
 					Listener listen = new Listener(share.selfaddress,Self_id,client,threadName,share);
 									
@@ -70,8 +70,8 @@ public class ElectionListener
 		}
 		catch (IOException e)
 		{
-			System.err.println("vamsi");
-			
+			System.err.println(e);
+			//System.exit(0);
 		}
 
 	}
@@ -104,7 +104,7 @@ public class ElectionListener
 		this.share = shareData;
 		
 		setPriority(NORM_PRIORITY - 1);
-		//System.out.println("Created thread " + this.getName());		
+		System.out.println("Created thread " + this.getName());		
 	}
 
 	public void run()
@@ -124,7 +124,7 @@ public class ElectionListener
 				  Object obj = in.readUnshared();
 				  processObject(obj);
 			  }
-			  //System.out.println("**************");
+			  System.out.println("**************");
 			}
 		}
 		catch (IOException e)
@@ -154,7 +154,7 @@ public class ElectionListener
 		
 		boolean retrnval = true;
 
-		//System.out.println("Hello doctoR");
+		System.out.println("Hello doctoR");
 		if (response instanceof Ping_Reply)
 		{
 			System.out.println(((Ping_Reply) response).getPing_Reply());
@@ -172,7 +172,7 @@ public class ElectionListener
 		else if (response instanceof Coordinator_Message)
 		{
 			//System.out.println(((Coordinator_Message) response).getCoordinator_Id());
-			//System.out.println("Received CO-ORDINATOR message :" +((Coordinator_Message) response).getCoordinator_Ip());
+			System.out.println("Received CO-ORDINATOR message :" +((Coordinator_Message) response).getCoordinator_Ip());
 			SetCoordinator((Coordinator_Message) response);
 			//Set the Coordinator
 			System.out.println("New Coordinator is :"+Coordinator_IP);
@@ -215,8 +215,8 @@ public class ElectionListener
 		
 		
 		
-		//System.out.println("Received election message from "+eObj.getLastIp() );
-		//System.out.println("Received election message with Originator "+eObj.getOriginator());
+		System.out.println("Received election message from "+eObj.getLastIp() );
+		System.out.println("Received election message with Originator "+eObj.getOriginator());
 		share.elock.startElection();
 		try {
 			Thread.sleep(1000);
@@ -227,8 +227,8 @@ public class ElectionListener
 		
 		if(eObj.getOriginator().equals(nodeObj.getIp()))
 		{
-			//System.out.println("Received election message was originated by me....");
-			//System.out.println("ELECTION STOPPED ...RECEIVED IP MESSAGES ARE :");
+			System.out.println("Received election message was originated by me....");
+			System.out.println("ELECTION STOPPED ...RECEIVED IP MESSAGES ARE :");
 			eObj.printList();
 			
 			//Get the coordinator
@@ -240,7 +240,7 @@ public class ElectionListener
 			//frame the coordinator message
 			Coordinator_Message Coordinator = new Coordinator_Message(nodeObj.getIp(), Coordinator_id,Coordinator_ip);
 			
-			//System.out.println("New Election Coordinator is :"+Coordinator_ip);
+			System.out.println("New Election Coordinator is :"+Coordinator_ip);
 			
 			//forward the coordinator message
 			forwardMessage(Coordinator);
@@ -249,7 +249,7 @@ public class ElectionListener
 		}
 		else
 		{
-			//System.out.println("adding my object :" +nodeObj.toString());
+			System.out.println("adding my object :" +nodeObj.toString());
 			
 			eObj.addObject(nodeObj);
 			forwardMessage(eObj);
@@ -261,16 +261,16 @@ public class ElectionListener
 
 	public  void SetCoordinator(Coordinator_Message response) throws IOException
 	{
-		//System.out.println("My Ip is "+nodeObj.getIp()+" and Originator for coordinator is "+response.getOriginator());
+		System.out.println("My Ip is "+nodeObj.getIp()+" and Originator for coordinator is "+response.getOriginator());
 		if(response.getOriginator().equals(nodeObj.getIp()))
 		{
-			//System.out.println("I STOPPED  FORWARDING <<<<<<<<<<<>>>>>>>>>>>>>>>>");
+			System.out.println("I STOPPED  FORWARDING <<<<<<<<<<<>>>>>>>>>>>>>>>>");
 			
 		}
 		else
 		{
 			//forward the coordinator message to the next node.
-			//System.out.println("IAM  FORWARDING *****************************");
+			System.out.println("IAM  FORWARDING *****************************");
 			
 			forwardMessage(response);
 			
@@ -282,15 +282,15 @@ public class ElectionListener
 		Coordinator_ID = response.getCoordinator_Id();
 		share.clock.setCoordInetAddress(Coordinator_IP);
 		
-		//System.out.println("Set the coordinator.... Stopping election");
+		System.out.println("Set the coordinator.... Stopping election");
 		
 		
 	}
 	//Method to send Data to Client
 	public  void sendObject(Object dataObj) throws IOException 
 	{
-		//System.out.println("Sending data ....");
-		//System.out.println(((Ping_Reply)dataObj).getPing_Reply());
+		System.out.println("Sending data ....");
+		System.out.println(((Ping_Reply)dataObj).getPing_Reply());
 		
 		ObjectOutputStream oout;
 		if(sd.isConnected())
@@ -298,7 +298,7 @@ public class ElectionListener
 			oout = new ObjectOutputStream(sd.getOutputStream());
 			oout.writeUnshared(dataObj);
 			oout.flush();
-			//System.out.println("Data Sent");
+			System.out.println("Data Sent");
 		}
 		else
 			throw new IOException();
@@ -329,7 +329,7 @@ public class ElectionListener
 				
 				if(s.isConnected())
 				{
-				//System.out.println("forwarding............ ....");
+				System.out.println("forwarding............ ....");
 				ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
 				out.writeUnshared(dataObj);
 				out.flush();

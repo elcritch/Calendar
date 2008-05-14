@@ -216,7 +216,7 @@ public class CalendarDB
 				dbStreamOut.write(entry.toString() + "\n");
 
 			dbStreamOut.close();
-			System.out.println("Checkpointed calendar file: " + dbFile);
+			// System.out.println("Checkpointed calendar file: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

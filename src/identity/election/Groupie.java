@@ -1,6 +1,7 @@
 package identity.election;
 
 import identity.server.SharedData;
+import identity.util.PrintColor;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -28,7 +29,7 @@ public class Groupie extends Thread
 	private static final int discoveryPort = 5298;
 	private static final int timeout = 3000; //milliseconds
 	private static final int default_timeout = 0; //infinite
-	private static final String mcastAddress = "230.10.10.10";
+	private static final String mcastAddress = "230.7.11.13";
 
 	private static final int DISCOVER_GROUP = 1;
 	private static final int LEAVE_GROUP = 2;
@@ -414,7 +415,7 @@ public class Groupie extends Thread
 	 */
 	public static void main(String[] args)
 	{
-		PrintColor.ansi = true;
+		PrintColor.type = 2;
 		SharedData shared = new SharedData();
 		try {
 

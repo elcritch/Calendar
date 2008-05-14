@@ -1,5 +1,6 @@
 package identity.distributed;
 
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -9,22 +10,22 @@ import java.net.SocketTimeoutException;
 import java.util.UUID;
 
 import identity.calendar.CalendarEntry;
-import identity.election.PrintColor;
 import identity.server.SharedData;
 import identity.server.UserInfo;
+import identity.util.PrintColor;
 
 public class DistributedHash implements Types
 {
-   private SharedData share;
+   public              SharedData share;
    int port = 5294;
    
-	DistributedHash (SharedData share)
+	public DistributedHash (SharedData share)
 	{
 	   this.share = share;
 	}
 
 	// methods for distributed commits
-	protected void sendAll(DHM dhm) throws SocketTimeoutException
+	public              void sendAll(DHM dhm) throws SocketTimeoutException
 	{
 		// this method will send the message to the coord queue
 		InetAddress[] servers = share.servers.toArray();
@@ -49,7 +50,7 @@ public class DistributedHash implements Types
 		
 	}
 	
-	protected void sendDHM(InetAddress host, DHM msg) throws SocketTimeoutException {
+	public              void sendDHM(InetAddress host, DHM msg) throws SocketTimeoutException {
       try {
 			Socket s = new Socket(host, port);
 			OutputStream out = s.getOutputStream();
@@ -94,12 +95,17 @@ public class DistributedHash implements Types
 	{
 		return null;
 	}
+
 	public UserInfo UserInfoGet (UUID uuid)
 	{
-		return null;}
+		return null;
+	}
+	
 	public UserInfo UserInfoQuickUUID (String username)
 	{
-		return null;}
+		return null;
+	}
+	
 	public UserInfo UserInfoDel (UUID uuid)
 	{
 		return null;

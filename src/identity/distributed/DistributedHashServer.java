@@ -7,11 +7,13 @@ package identity.distributed;
  * @version $Rev$
  */
 
+
 import identity.calendar.CalendarDBServer;
 import identity.distributed.ServerConnection.ProcessException;
-import identity.election.PrintColor;
 import identity.server.SharedData;
 import identity.server.UserInfoDataBase;
+import identity.util.PrintColor;
+import identity.util.Stacker;
 
 import java.io.*;
 import java.net.*;
@@ -53,6 +55,7 @@ public class DistributedHashServer extends Thread
 
 	public DistributedHashServer(SharedData share, int port)
 	{
+		Stacker.stack();
 		this.share = share;
 		this.port = port;
 
@@ -75,6 +78,7 @@ public class DistributedHashServer extends Thread
 
 	public void run()
 	{
+		Stacker.stack();
 		Socket client;
 		try {
 			while (true) {
@@ -93,8 +97,10 @@ public class DistributedHashServer extends Thread
 	// main method
 	public static void main (String [] args)
 	{
+		PrintColor.type = 1;
+
 		SharedData data = new SharedData();
-      int dhmport = 5294;
+		int dhmport = 5294;
 		DistributedHashServer dhserver = new DistributedHashServer( data, dhmport);
 
 		dhserver.start();
@@ -140,7 +146,7 @@ Basic checkpointing.
    - the master will respond back with the appropriate message depending on wether all the hashCode's agrees.
 
 
-*/
+ */
 class ServerConnection extends Thread implements Types
 {
 	Socket client;
@@ -150,15 +156,16 @@ class ServerConnection extends Thread implements Types
 	private int port;
 	ConcurrentHashMap<Lamport, DHM> queue;
 	private LocalShare ls;
-	
+
 	public ServerConnection(Socket client2, LocalShare ls)
 	{
+		Stacker.stack();
 		this.client = client2;
 		this.share = ls.share;
 		this.port = ls.port;
 		this.queue = ls.queue;
 		this.ls = ls;
-		
+
 		setPriority(NORM_PRIORITY - 1);
 		System.out.println("Created thread " + this.getName());
 	}
@@ -166,21 +173,22 @@ class ServerConnection extends Thread implements Types
 
 	/* ------------------------------------------------------------------------------- */
 
-	
+
 	/**
 	 * 
 	 * @throws IOException 
 	 */
 	private void process(DHM_vote vote) throws IOException
 	{
+		Stacker.stack();
 		try {
 			DHM response, result = null;
-			
+
 			switch (vote.type) {
 			case   VOTE_BEGIN:
 				performVoteBegin(vote);
 				break;
-				
+
 			case VOTE_REQUEST:
 				// respond back with whether we have our given message
 				if (queue.containsKey(vote.lamport)) {
@@ -199,12 +207,12 @@ class ServerConnection extends Thread implements Types
 					throw new ProcessException("Incorrect VOTE_REQUEST response",result);
 				}
 				break;
-				
+
 			case  VOTE_COMMIT:
 				throw new ProcessException("ERROR: VOTE_COMMIT should be handled by Sender threads",vote);				
 			case      GET_MSG:
 				throw new ProcessException("ERROR: GET_MSG should be handled by Sender threads",vote);
-				
+
 			case    DO_COMMIT:
 				// then we should put this message id in the queue
 				boolean check;
@@ -212,18 +220,16 @@ class ServerConnection extends Thread implements Types
 					// get the message from the queue
 					result = queue.get(vote.lamport);
 					queue.remove(vote.lamport);
-					if (result instanceof DHM_cal) {
-						DHM_cal cal = (DHM_cal) result;
-						check = ls.caldb.addEntry(cal.entry);
-						if (!check) 
-							throw new ProcessException("ERROR: couldn't add",vote);
-					}
+					
+					// do what the message should do
+					doMessageAction(result);
+					
 				} else {
 					throw new ProcessException("ERROR: got DO_COMMIT with no message in the queue",vote);
 				}
 				break;
 			default :
-   			throw new ProcessException("ERROR: don't know the vote type",vote);
+				throw new ProcessException("ERROR: don't know the vote type",vote);
 			}
 		}
 		catch (ProcessException pe) {
@@ -232,36 +238,69 @@ class ServerConnection extends Thread implements Types
 			stream_out.writeUnshared(pe);
 		}
 	}
+	
+	/**
+	This performs the action notated in the message
+	 * @throws ProcessException 
+	*/
+	private void doMessageAction(DHM msg) throws ProcessException {
+		boolean check = true;
+		Stacker.stack();
 
+		if (msg instanceof DHM_cal) {
+			DHM_cal cal = (DHM_cal) msg;
+			
+			if (cal.type == ADD) {
+				check = ls.caldb.addEntry(cal.entry);
+			} else if (cal.type == DEL) {
+				check = ls.caldb.delEntry(cal.entry);
+			} 
+			
+		} else if (msg instanceof DHM_user) {
+			DHM_user usr = (DHM_user) msg;
+			if (usr.type == ADD) {
+				ls.userdb.putUserEntry(usr.user);
+			} else if (usr.type == DEL) {
+				ls.userdb.delUserEntry(usr.user);
+			}
+		} else {
+			//PrintColor.red("Error doMessageAction type");
+			throw new ProcessException("ERROR: unknown doMessageType",msg);
+		}
+	}
+	
 	private void process(DHM_checkpoint chkpnt)
 	{
-	   //TODO
+		Stacker.stack();
+		//TODO
 	}
 
 
-   /**
+	/**
    This method is a default fallback and we use it here to process "data" requests
    and to return and error message when we get an unexpected message.
-   */
-   private void process(DHM msg)
-   {
-      if (msg instanceof DHM_cal || msg instanceof DHM_user) {
-         // in these cases, just put the data into the queue
-         PrintColor.yellow("Putting message in queue: "+msg);
-      }
-   }
+	 */
+	private void process(DHM msg)
+	{
+		Stacker.stack();
+		if (msg instanceof DHM_cal || msg instanceof DHM_user) {
+			// in these cases, just put the message into the queue
+			PrintColor.yellow("Putting message in queue: "+msg);
+		}
+	}
 
 
 	/* ------------------------------------------------------------------------------- */
-	
-	
+
+
 	/**
 	This method is responsible to all the logic to actually perform a vote for a Queue commit.
-	
 
-	*/
+
+	 */
 	private void performVoteBegin(DHM_vote initmsg) throws ProcessException
 	{
+		Stacker.stack();
 		if (share.clock.checkCoordinator() ) {
 			// begin vote process
 			// send vote_request objects to all servers
@@ -305,9 +344,10 @@ class ServerConnection extends Thread implements Types
 
 	/**
 	Run method, this starts a new server response thread
-	*/
+	 */
 	public void run()
 	{
+		Stacker.stack();
 		// we connect to client, read in their message and process it. Then we leave.
 		try {
 			stream_in = new ObjectInputStream(client.getInputStream());
@@ -347,6 +387,7 @@ class ServerConnection extends Thread implements Types
 
 	private void processRequest(Object request) throws IOException
 	{
+		Stacker.stack();
 		if (request instanceof DHM) {
 			DHM msg = (DHM) request;
 
@@ -367,7 +408,7 @@ class ServerConnection extends Thread implements Types
 		}
 		else {
 			PrintColor.yellow("Unknown message received: " + request.getClass()
-			                  + " from: " + client.getInetAddress() );
+					+ " from: " + client.getInetAddress() );
 		}
 		return;
 	}
@@ -378,9 +419,10 @@ class ServerConnection extends Thread implements Types
 	/**
 
 
-	*/
+	 */
 	protected DHM[] sendAndReceiveAll(DHM dhm) throws ProcessException
 	{
+		Stacker.stack();
 		// this method will send the message to the coord queue
 		InetAddress[] servers = share.servers.toArray();
 
@@ -402,7 +444,7 @@ class ServerConnection extends Thread implements Types
 			}
 
 			int i = 0;
-for (SenderVote sent : sender) {
+			for (SenderVote sent : sender) {
 				results[i++] = sent.result;
 			}
 			return results;
@@ -416,6 +458,7 @@ for (SenderVote sent : sender) {
 
 	protected void sendDHM(InetAddress host, DHM msg) throws SocketTimeoutException
 	{
+		Stacker.stack();
 		try {
 			Socket s = new Socket(host, port);
 			OutputStream out = s.getOutputStream();
@@ -438,7 +481,7 @@ for (SenderVote sent : sender) {
 
 	In the SenderVote case, we want to send a vote_co
 
-	*/
+	 */
 	class Sender extends Thread
 	{
 		DHM msg = null;
@@ -458,6 +501,7 @@ for (SenderVote sent : sender) {
 
 		public void run()
 		{
+			Stacker.stack();
 			try {
 				if (semaphore != null)
 					semaphore.acquire();
@@ -497,8 +541,8 @@ for (SenderVote sent : sender) {
 		}
 
 		/**
-		* The repond method implements any specific protocolos for a given message type
-		*/
+		 * The repond method implements any specific protocolos for a given message type
+		 */
 		protected void respond()
 		{
 			return; // do nothing for basic Sender Thread
@@ -517,7 +561,7 @@ for (SenderVote sent : sender) {
 		The protocal for SenderVote should send out a VOTE_REQUEST/lamport message,
 		then wait for a VOTE_COMMIT/lamport message.
 		If it receives a GET_MSG/lamport instead we need to send this message
-		*/
+		 */
 		protected void respond()
 		{
 			try {

@@ -11,10 +11,8 @@ import java.io.*;
 public class ElectionLock
 {
    boolean election = false;
-   
-   public synchronized 
-   
-	public synchronized void startElection( )
+ 
+	public synchronized void startElection()
 	{
 	   election = true;
 	}
@@ -38,7 +36,6 @@ public class ElectionLock
 	{
       election = false;
 		notifyAll();
-	
 	}
 
 }

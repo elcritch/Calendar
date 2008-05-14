@@ -64,40 +64,41 @@ public class UserInfoDataBase
 			e.printStackTrace();
 			System.exit(3);
 		}
-		
+
 		int delay = 7*1000; // delay for 5 sec.
 		int period = 49*1000; // repeatTimer timer = new Timer();
-		
+
 		Timer timer = new Timer();
 		timer.scheduleAtFixedRate(new TimerTask()
 		{
 			public void run()
 			{
 				//method to write the objects from hashtable to a file
-					try {
-						checkpoint();
-					} catch (UserInfoException e) {
-						// TODO Auto-generated catch block
-						System.err.println("UserInfoException while checkpoint." +
-								"File might be corrupt!");					
-					}
-				
+				try {
+					// System.out.println("Checkpointed UserInfoDataBase");
+					checkpoint();
+				} catch (UserInfoException e) {
+					// TODO Auto-generated catch block
+					System.err.println("UserInfoException while checkpoint." +
+					"File might be corrupt!");					
+				}
+
 			}
 		}, delay, period);
-		
+
 	}
 	/*
 	  NOTE: might need to manually synchronize the ArrayList in order to serialize it?
-	*/
+	 */
 
 	/**
-	*  Returns a synchronizedList containing the UUID database.
-	* @return List synchronizedList containing the UUID database
+	 *  Returns a synchronizedList containing the UUID database.
+	 * @return List synchronizedList containing the UUID database
 	 */
-   // public ConcurrentHashMap<UUID, UserInfo> getHashUUID ()
-   // {
-   //    return dbHash;
-   // }
+	// public ConcurrentHashMap<UUID, UserInfo> getHashUUID ()
+	// {
+	//    return dbHash;
+	// }
 
 
 	/**
@@ -126,7 +127,7 @@ public class UserInfoDataBase
 			ObjectOutputStream dbStreamOut = new ObjectOutputStream( new FileOutputStream(dbFile, false) );
 			dbStreamOut.writeUnshared(dumparray);
 			dbStreamOut.close();
-			
+
 			//System.out.println("Checkpointed User Information database: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
@@ -148,8 +149,8 @@ public class UserInfoDataBase
 	{
 		return dbHash.get(uid);
 	}
-	
-	
+
+
 
 	public UserInfo getUserName(String uname)
 	{
@@ -178,14 +179,33 @@ public class UserInfoDataBase
 		return false;
 	}
 
-
+	//userdb.containsKey(newUser.uuid)
+	//		userdb.put(newUser.uuid, newUser);
+	public void putUserEntry(UserInfo user) {
+		dbHash.put(user.uuid, user);		
+	}
+	
+	public void put(UUID uid, UserInfo user) {
+		dbHash.put(uid, user);		
+	}
+	
+	
+	public boolean delUserEntryCheck(UserInfo user) {
+		return dbHash.remove(user.uuid, user);
+	}
+	
+	public void delUserEntry(UserInfo user) {
+		dbHash.remove(user.uuid);
+	}
+	
+	
 	public static void main(String[] args)
 	{
 		// TODO Test this functionality now
 		UserInfoDataBase foodb = new UserInfoDataBase("defaultUserInfo.db");
 
 		try {
-			
+
 			UserInfo testuser0 = new UserInfo("testuser00", "mypasswd0", "No Real Name");
 			UserInfo testuser1 = new UserInfo("testuser10", "mypasswd1", "Bob Jon");
 			UserInfo testuser2 = new UserInfo("testuser30", "mypasswd2", "Welly Nilson");
@@ -202,7 +222,7 @@ public class UserInfoDataBase
 			foodb.dbHash.put(testuser2.uuid, testuser2);
 			foodb.dbHash.put(testuser3.uuid, testuser3);
 
-			System.out.println("\n\nCheckpointing1");
+			// System.out.println("\n\nCheckpointing1");
 			foodb.checkpoint();
 
 			System.out.println("\nTesting Reading");
