@@ -18,5 +18,14 @@ public final class Lamport {
 	   this.msgid = msgid;
 	   this.coord = coord;
 	}
+	
+	public boolean equals(Object other) {
+	   if (other instanceof Lamport) {
+	      Lamport o = (Lamport)other;
+	      return ( msgid.equals(o.msgid) && coord.equals(o.coord) );
+      } else {
+         return false;
+      }
+	}
 }
 

@@ -181,9 +181,26 @@ class ServerConnection extends Thread implements Types
 	private void process(DHM_checkpoint chkpnt)
 	{}
 
-	/* ------------------------------------------------------------------------------- */
-	/**
 
+   /**
+   This method is a default fallback and we use it here to process "data" requests
+   and to return and error message when we get an unexpected message.
+   */
+   private void process(DHM msg)
+   {
+      if (msg instanceof DHM_cal || msg instanceof DHM_user) {
+         // in these cases, just put the data into the queue
+         PrintColor.yellow("Putting message in queue: "+msg)
+      }
+   }
+
+
+	/* ------------------------------------------------------------------------------- */
+	
+	
+	/**
+	This method is responsible to all the logic to actually perform a vote for a Queue commit.
+	
 
 	*/
 	private void performVoteBegin(DHM_vote initmsg) throws ProcessException
@@ -209,8 +226,14 @@ class ServerConnection extends Thread implements Types
 
 			// we shouldn't need to do error checking here?
 			// checkpoint should catch any more errors
-			sendAndReceiveAll(new DHM_vote(DO_COMMIT) );
-
+			results = sendAndReceiveAll(new DHM_vote(DO_COMMIT, initmsg.lamport) );
+         
+			for (DHM r : results) {
+				if (r != null && (r instanceof DHM_vote) && r.type == VOTE_COMMIT)
+					check = true;
+				else
+					check = false;
+			}
 		}
 		else {
 			// not coordinator, send back error message
@@ -218,13 +241,6 @@ class ServerConnection extends Thread implements Types
 			throw new ProcessException(error);
 		}
 	}
-
-	@SuppressWarnings("unused")
-	private void process(DHM msg)
-	{
-		PrintColor.red("Cannot Process Stand DHM: NOT IMPLEMENTED");
-	}
-
 
 	/**
 	Run method, this starts a new server response thread

@@ -18,8 +18,9 @@ public final class DHM_cal extends DHM {
 	protected Integer entryid;
     protected CalendarEntry entry;
     
-	public DHM_cal(int vote_msg, CalendarEntry entry) {
-		super(vote_msg);
+	public DHM_cal(int type, CalendarEntry entry) {
+		super(type);
 		this.entry = entry;
+		this.entryid = entry.id;
 	}
 }

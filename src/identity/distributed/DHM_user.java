@@ -19,8 +19,8 @@ public final class DHM_user extends DHM {
     /**
      * 
      */
-	public DHM_user(int vote_msg, UserInfo user) {
-		super(vote_msg);
+	public DHM_user(int type, UserInfo user) {
+		super(type);
 		this.user = user;
 	}
 }
