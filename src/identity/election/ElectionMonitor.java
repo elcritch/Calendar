@@ -1,4 +1,6 @@
-package identity.election;
+ package identity.election;
+
+import identity.server.SharedData;
 
 import identity.server.SharedData;
 
@@ -23,7 +25,7 @@ import java.net.InetAddress;
  * @author vnandana
  *
  */
-class ElectionMonitor extends Thread
+public class ElectionMonitor extends Thread
 {
 	public static Socket client;
 	public static Node nodeObj;
@@ -33,7 +35,7 @@ class ElectionMonitor extends Thread
 	public SharedData share;
 
 	//Constructor
-	ElectionMonitor(String threadName,SharedData sharedData ) throws SocketException
+	public ElectionMonitor(String threadName,SharedData sharedData ) throws SocketException
 	{
 		super(threadName);
 		
@@ -60,6 +62,7 @@ class ElectionMonitor extends Thread
 					try {
 						if(share.clock.getCoordInetAddress() == null)
 							throw new IOException("Initial ");
+						
 						if(!nodeObj.getIp().equals(share.clock.getCoordInetAddress()))
 						{
 							share.elock.waitForElection();
@@ -68,6 +71,7 @@ class ElectionMonitor extends Thread
 							InetAddress Coordinator_IP  = share.clock.getCoordInetAddress();
 							int Coordinator_ID = share.clock.getCoordInetAddress().hashCode();
 							
+							System.out.println("Coordinator Ip :"+Coordinator_IP);
 							 client = new Socket(Coordinator_IP,port);
 							 client.setSoTimeout(7000);		
 							 
@@ -95,15 +99,16 @@ class ElectionMonitor extends Thread
 							} 
 							catch (IOException e1)
 							{
+								System.out.println("exception received...");
 								// Get the next neighbour and send the election message
-								System.out.println("get next neighbour to send election message");
+								//System.out.println("get next neighbour to send election message");
 							}
 							share.elock.startElection();
 							
 							share.elock.waitForElection();
 							
-							System.out.println("Lock Released...");
-							System.out.println("election monitor..cooop is :"+share.clock.getCoordInetAddress());
+							//System.out.println("Lock Released...");
+							//System.out.println("election monitor..cooop is :"+share.clock.getCoordInetAddress());
 							
 						//}
 					} 
@@ -129,7 +134,7 @@ class ElectionMonitor extends Thread
 	//method to initiate Ping request
 	private boolean sendPingRequest() throws IOException
 	{
-		System.out.println("Ready to send ping again..............");
+		//System.out.println("Ready to send ping again..............");
 	    ObjectOutputStream out;
 	    if(client.isConnected())
 	    {
@@ -203,8 +208,8 @@ class ElectionMonitor extends Thread
 			{
 				
 				s = new Socket(nextIp, port);
-				
-				if(s.isConnected())
+			
+				if(s.isConnected() && !s.isOutputShutdown() &&s.isBound() )
 				{
 				System.out.println("sending............ ....");
 				ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
@@ -214,12 +219,12 @@ class ElectionMonitor extends Thread
 				}
 				else
 				{
-					System.out.println("Getting the next neighbour in the list ...forward failed ");
+					//System.out.println("Getting the next neighbour in the list ...forward failed ");
 					throw new IOException();
 				}
 				
 			}
-			catch (IOException e)
+			catch (Exception e)
 			{
 				// TODO Auto-generated catch block
 				System.out.println("Getting the next neighbour in the list ");

@@ -29,9 +29,6 @@ public class Test
 			
 			ElectionListener listen = new ElectionListener("ElectionListener",share);
 			ElectionMonitor monitor = new ElectionMonitor("ElectionMonitor",share);
-			
-			
-		
 			g.start();
 			monitor.start();
 			listen.runListener();
