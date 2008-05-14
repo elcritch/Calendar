@@ -7,7 +7,7 @@ package identity.distributed;
  * @author jaremy
  *
  */
-public class DHM_checkpoint extends DHmsg {
+public class DHM_checkpoint extends DHM {
 	public int checksum;
 	/**
 	 * 

@@ -12,5 +12,6 @@ interface Types
    public static final int GET_MSG      = 140;
    public static final int DO_COMMIT    = 150;
    
-   public static final int ERROR    = -1000;
+   public static final int ERROR       = -1000;
+   public static final int VOTE_ERROR  = -1010;
 }

@@ -7,7 +7,7 @@ package identity.distributed;
  * @author jaremy
  *
  */
-public class DHM_vote extends DHmsg {
+public class DHM_vote extends DHM {
 
 	/**
 	 * 

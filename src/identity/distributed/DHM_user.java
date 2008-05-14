@@ -8,7 +8,7 @@ import identity.server.UserInfo;
  * @author Jaremy Creechley &lt;&gt;
  * @version 0.1
  */
-public final class DHM_user extends DHmsg {    
+public final class DHM_user extends DHM {    
     
     /**
 	 * 

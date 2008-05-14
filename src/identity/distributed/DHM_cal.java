@@ -8,7 +8,7 @@ import identity.calendar.CalendarEntry;
  * @author Jaremy Creechley &lt;&gt;
  * @version 0.1
  */
-public final class DHM_cal extends DHmsg {
+public final class DHM_cal extends DHM {
     
     /**
 	 * 

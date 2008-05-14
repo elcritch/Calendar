@@ -24,7 +24,7 @@ public class DistributedHash implements Types
 	}
 
 	// methods for distributed commits
-	protected void sendAll(DHmsg dhm) throws SocketTimeoutException
+	protected void sendAll(DHM dhm) throws SocketTimeoutException
 	{
 		// this method will send the message to the coord queue
 		InetAddress[] servers = share.servers.toArray();
@@ -49,7 +49,7 @@ public class DistributedHash implements Types
 		
 	}
 	
-	protected void sendDHM(InetAddress host, DHmsg msg) throws SocketTimeoutException {
+	protected void sendDHM(InetAddress host, DHM msg) throws SocketTimeoutException {
       try {
 			Socket s = new Socket(host, port);
 			OutputStream out = s.getOutputStream();
@@ -65,9 +65,9 @@ public class DistributedHash implements Types
 	}
 	
 	class Sender extends Thread {
-	   DHmsg msg;
+	   DHM msg;
 	   InetAddress host;
-	   Sender(InetAddress host, DHmsg msg) { 
+	   Sender(InetAddress host, DHM msg) { 
 	      this.msg = msg;
 	      this.host = host;
 	   }
