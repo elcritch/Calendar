@@ -25,7 +25,7 @@ public class DistributedHash implements Types
 	}
 
 	// methods for distributed commits
-	public              void sendAll(DHM dhm) throws SocketTimeoutException
+	public boolean sendAll(DHM dhm)
 	{
 		// this method will send the message to the coord queue
 		InetAddress[] servers = share.servers.toArray();
@@ -39,18 +39,23 @@ public class DistributedHash implements Types
 		}
 		// sleep for a bit. we could join all threads, but this should give us enough delay?
 		try {
-			tmp.join(200);
+			tmp.join(800);
 		} catch (InterruptedException e) {
 			// ignore error
 		}
 		
 		// send the VOTE_BEGIN message to the coordinator
 		/* note: this will result in a socketimeout error if unsucessfull */
-		sendDHM(share.clock.getCoordInetAddress(), new DHM_vote(VOTE_BEGIN));
-		
+		try {
+			sendDHM(share.clock.getCoordInetAddress(), new DHM_vote(VOTE_BEGIN));
+		} catch (SocketTimeoutException e) {
+			return false;
+		}
+		return true;
+
 	}
 	
-	public              void sendDHM(InetAddress host, DHM msg) throws SocketTimeoutException {
+	public void sendDHM(InetAddress host, DHM msg) throws SocketTimeoutException {
       try {
 			Socket s = new Socket(host, port);
 			OutputStream out = s.getOutputStream();
