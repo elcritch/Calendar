@@ -33,7 +33,7 @@ public class CalendarDB
 	 * types. The flat database model allows this class to be used for both client/server
 	 * applications with generality. Overwrite this with correct generics type.
 	 */
-	public ConcurrentHashMap<Integer, CalendarEntry> db;
+	private ConcurrentHashMap<Integer, CalendarEntry> db;
 
 	public DateFormat datefmt;
 	public UUID useruuid;

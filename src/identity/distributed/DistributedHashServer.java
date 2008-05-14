@@ -19,9 +19,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import sun.misc.PerformanceLogger;
-import sun.tools.tree.CastExpression;
-
+class LocalShare {
+	public int port;
+	public UserInfoDataBase userdb;
+	public CalendarDBServer caldb;
+	public ConcurrentHashMap<Lamport, DHM> queue;
+	public SharedData share;
+	public LocalShare(int port, UserInfoDataBase userdb,
+			CalendarDBServer caldb, ConcurrentHashMap<Lamport, DHM> queue,
+			SharedData share) {
+		this.port = port;
+		this.userdb = userdb;
+		this.caldb = caldb;
+		this.queue = queue;
+		this.share = share;
+	}
+}
 
 public class DistributedHashServer extends Thread
 {
@@ -32,8 +45,8 @@ public class DistributedHashServer extends Thread
 	private SharedData share;
 
 	// storage databases
-	private UserInfoDataBase userdb;
-	private CalendarDBServer caldb;
+	public UserInfoDataBase userdb;
+	public CalendarDBServer caldb;
 
 	// queue databases
 	private ConcurrentHashMap<Lamport, DHM> queue;
@@ -66,7 +79,8 @@ public class DistributedHashServer extends Thread
 			while (true) {
 				client = ss.accept();
 				System.out.println("Received connect from " + client.getInetAddress());
-				new ServerConnection(client, port, queue, share).start();
+				LocalShare ls = new LocalShare(port,userdb,caldb,queue,share);
+				new ServerConnection(client, ls).start();
 			}
 		}
 		catch  (IOException e) {
@@ -88,6 +102,44 @@ public class DistributedHashServer extends Thread
 
 }
 
+/**
+Code to process 2 stage voting commit
+this section should include code to receive vote messages for both the queue and the databases 
+
+Terminology: master is the coordinator server. every "server" is a client and server. In this case we
+   will use both.
+
+Basic sketch message queue:
+   - every servlet has a message queue containing both user and calendar database DHM's.
+   - any client can do a "sendAll" to send their message to all the other server's queues.
+   - once a servlet has sent their message to all the servers, including the master server and itself.
+      it then must send a "commit msgid from queue" message to the master server
+      (the connection to the client will be maintained during this?
+      this could be used to throw a timeout exception cancelling the process if it takes too long. )
+
+   - the master server upon receiving a "vote_begin msgid" message will send a 
+      "vote_request msgid" to all servers and setup a counting sempahore and wait for it. 
+      at this point the master will also check for a checkpointing process that is going on. 
+   - when a server gets a "vote_request msgid" from the master, it checks to see if it has this msgid.
+      1. if it does then it will respond back with a "vote_committ msgid"
+      2. else it will respond with a "get_msg msgid" to the server and wait for the msg. if it gets it 
+            will send "vote_committ msgid", repeating if necessary
+   - once all the servers respond then the semaphore will be released, then a non-locking
+      "do_commit msgid" will be sent
+   - all servers once receiving a "do_commit msgid" will put the file in the appropriate hashtable.
+
+Basic checkpointing. 
+   - checkpointing will be controlled by the master using a timer thread. 
+      1. a "checkpoint_request" message will be sent to all.
+      2. a lock will be set which will stop any new voting processes
+   - all processess will respond with a "checkpoint_vote hashCode" with the hashcode being the unique state
+      of each of it hashtables.
+      a lock will be set locking any new commits to the hashtables.
+      the servers will wait for a "checkpoint_commit" or "checkpoint_abort"
+   - the master will respond back with the appropriate message depending on wether all the hashCode's agrees.
+
+
+*/
 class ServerConnection extends Thread implements Types
 {
 	Socket client;
@@ -96,57 +148,24 @@ class ServerConnection extends Thread implements Types
 	private SharedData share;
 	private int port;
 	ConcurrentHashMap<Lamport, DHM> queue;
+	private LocalShare ls;
 	
-	ServerConnection (Socket client, int port, ConcurrentHashMap<Lamport, DHM> queue, SharedData share) throws SocketException
+	public ServerConnection(Socket client2, LocalShare ls)
 	{
-		this.client = client;
-		this.share = share;
-		this.port = port;
-		this.queue = queue;
+		this.client = client2;
+		this.share = ls.share;
+		this.port = ls.port;
+		this.queue = ls.queue;
+		this.ls = ls;
 		
 		setPriority(NORM_PRIORITY - 1);
 		System.out.println("Created thread " + this.getName());
 	}
 
+
 	/* ------------------------------------------------------------------------------- */
-	/**
-	     Code to process 2 stage voting commit
-	     this section should include code to receive vote messages for both the queue and the databases 
 
-	     Terminology: master is the coordinator server. every "server" is a client and server. In this case we
-	        will use both.
-
-	     Basic sketch message queue:
-	        - every servlet has a message queue containing both user and calendar database DHM's.
-	        - any client can do a "sendAll" to send their message to all the other server's queues.
-	        - once a servlet has sent their message to all the servers, including the master server and itself.
-	           it then must send a "commit msgid from queue" message to the master server
-	           (the connection to the client will be maintained during this?
-	           this could be used to throw a timeout exception cancelling the process if it takes too long. )
-
-	        - the master server upon receiving a "vote_begin msgid" message will send a 
-	           "vote_request msgid" to all servers and setup a counting sempahore and wait for it. 
-	           at this point the master will also check for a checkpointing process that is going on. 
-	        - when a server gets a "vote_request msgid" from the master, it checks to see if it has this msgid.
-	           1. if it does then it will respond back with a "vote_committ msgid"
-	           2. else it will respond with a "get_msg msgid" to the server and wait for the msg. if it gets it 
-	                 will send "vote_committ msgid", repeating if necessary
-	        - once all the servers respond then the semaphore will be released, then a non-locking
-	           "do_commit msgid" will be sent
-	        - all servers once receiving a "do_commit msgid" will put the file in the appropriate hashtable.
-
-	     Basic checkpointing. 
-	        - checkpointing will be controlled by the master using a timer thread. 
-	           1. a "checkpoint_request" message will be sent to all.
-	           2. a lock will be set which will stop any new voting processes
-	        - all processess will respond with a "checkpoint_vote hashCode" with the hashcode being the unique state
-	           of each of it hashtables.
-	           a lock will be set locking any new commits to the hashtables.
-	           the servers will wait for a "checkpoint_commit" or "checkpoint_abort"
-	        - the master will respond back with the appropriate message depending on wether all the hashCode's agrees.
-
-
-	 */
+	
 	/**
 	 * 
 	 * @throws IOException 
@@ -154,18 +173,54 @@ class ServerConnection extends Thread implements Types
 	private void process(DHM_vote vote) throws IOException
 	{
 		try {
+			DHM response, result = null;
+			
 			switch (vote.type) {
+			
 			case   VOTE_BEGIN:
 				performVoteBegin(vote);
 				break;
+				
 			case VOTE_REQUEST:
-				// respond back with wether we have our given message
+				// respond back with whether we have our given message
+				if (queue.containsKey(vote.lamport)) {
+					response = new DHM_vote(VOTE_COMMIT,vote.lamport);
+				} else {
+					// send GET_MSG
+					response = new DHM_vote(GET_MSG,vote.lamport);
+				}
+				stream_out.writeUnshared(response);
+				try {
+					result = (DHM_vote) stream_in.readUnshared();
+					process(result);
+				} catch (ClassNotFoundException e) {
+					throw new ProcessException("Incorrect VOTE_REQUEST response",result);
+				} catch (ClassCastException e) {
+					throw new ProcessException("Incorrect VOTE_REQUEST response",result);
+				}
 				break;
+				
 			case  VOTE_COMMIT:
-				break;
+				throw new ProcessException("ERROR: VOTE_COMMIT should be handled by Sender threads",vote);				
 			case      GET_MSG:
-				break;
+				throw new ProcessException("ERROR: GET_MSG should be handled by Sender threads",vote);
+				
 			case    DO_COMMIT:
+				// then we should put this message id in the queue
+				boolean check;
+				if (queue.contains(vote.lamport)) {	
+					// get the message from the queue
+					result = queue.get(vote.lamport);
+					queue.remove(vote.lamport);
+					if (result instanceof DHM_cal) {
+						DHM_cal cal = (DHM_cal) result;
+						check = ls.caldb.addEntry(cal.entry);
+						if (!check) 
+							throw new ProcessException("ERROR: couldn't add",vote);
+					}
+				} else {
+					throw new ProcessException("ERROR: got DO_COMMIT with no message in the queue",vote);
+				}
 				break;
 			default :
 				break;
@@ -190,7 +245,7 @@ class ServerConnection extends Thread implements Types
    {
       if (msg instanceof DHM_cal || msg instanceof DHM_user) {
          // in these cases, just put the data into the queue
-         PrintColor.yellow("Putting message in queue: "+msg)
+         PrintColor.yellow("Putting message in queue: "+msg);
       }
    }
 
@@ -226,13 +281,17 @@ class ServerConnection extends Thread implements Types
 
 			// we shouldn't need to do error checking here?
 			// checkpoint should catch any more errors
-			results = sendAndReceiveAll(new DHM_vote(DO_COMMIT, initmsg.lamport) );
-         
-			for (DHM r : results) {
-				if (r != null && (r instanceof DHM_vote) && r.type == VOTE_COMMIT)
-					check = true;
-				else
-					check = false;
+			if (check==true) {
+				results = sendAndReceiveAll(new DHM_vote(DO_COMMIT, initmsg.lamport) );
+
+				for (DHM r : results) {
+					if (r != null && (r instanceof DHM_vote) && r.type == VOTE_COMMIT)
+						check = true;
+					else
+						check = false;
+				}
+			} else {
+				throw new ProcessException("Error voting on ",initmsg);
 			}
 		}
 		else {
