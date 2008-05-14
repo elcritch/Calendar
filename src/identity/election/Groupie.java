@@ -170,8 +170,9 @@ public class Groupie extends Thread
 
 	private int generateChecksum() {
 		// try using the sum of the servers hashcode with the current coord ip address
-		return servers.hashCode()
-			+ (share.shared.clock.getCoordInetAddress()==null)? 0: shared.clock.getCoordInetAddress().hashCode();
+		int serhs = servers.hashCode();
+		int crdhs = (shared.clock.getCoordInetAddress()==null)? 0: shared.clock.getCoordInetAddress().hashCode();
+		return serhs + crdhs;
 	}
 	
 	public void printDatagram(DatagramPacket pkt) throws UnknownHostException, IOException
