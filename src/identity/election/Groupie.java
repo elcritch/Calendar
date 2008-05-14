@@ -5,7 +5,6 @@ import identity.server.SharedData;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -22,7 +21,7 @@ import java.util.NoSuchElementException;
  * @author amit
  * @author Jaremy Creechley 
  */
-public class Groupie
+public class Groupie extends Thread
 {
 
 	private static final int debug = 1;
@@ -45,10 +44,12 @@ public class Groupie
 	private InetAddress group;
 	private MulticastSocket s;
 
-	private CoordLock coordLock = new CoordLock();
+	//private CoordLock coordLock = new CoordLock();
 	private boolean checksumProcess = false;
 	private int checksumFailureCount = 0;
+	
 	private ServerList servers;
+	
 	/**
 	 * Setter for checksumProcess.
 	 * @param newChecksumProcess new value for checksumProcess
@@ -202,19 +203,25 @@ public class Groupie
 				packetType + " from " + pkt.getAddress());
 	}
 
-	private void initialize(boolean setcoord) 	throws IOException
+	private void initialize() 	throws IOException
 	{
-		if (setcoord)
-			coordLock.becomeCoordinator();
-
 		// Initialize Things
-		servers = new ServerList((InetAddress) InetAddress.getLocalHost());
 		s.setSoTimeout(timeout);
 
 		// send intial message
 		sendIntMessage(DISCOVER_GROUP);
 	}
+	
+	public void run() {
+		try {
+			initialize();
+			groupDance();
 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void leave()
 	{
 		try {
@@ -400,7 +407,6 @@ public class Groupie
 	 */
 	public static void main(String[] args)
 	{
-		boolean setcoord= false;
 		PrintColor.ansi = true;
 		SharedData shared = new SharedData();
 		try {
@@ -408,13 +414,15 @@ public class Groupie
 			// NEW TEST!
 			// NEW DOUBLE!
 			if (args.length>0) {
-				setcoord = true;
 				System.out.println("%% I am Coordinator! %%");
 			}
-			g.initialize(setcoord);
-			g.groupDance();
+			g.initialize();
+			g.start();
+			g.join();
 		}
 		catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
