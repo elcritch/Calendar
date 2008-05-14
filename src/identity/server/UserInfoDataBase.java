@@ -128,7 +128,7 @@ public class UserInfoDataBase
 			dbStreamOut.writeUnshared(dumparray);
 			dbStreamOut.close();
 			
-			System.out.println("Checkpointed User Information database: " + dbFile);
+			//System.out.println("Checkpointed User Information database: " + dbFile);
 		}
 		catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

@@ -2,6 +2,8 @@ package identity.election;
 
 
 
+import identity.server.SharedData;
+
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -27,9 +29,6 @@ public class Test
 			
 			ElectionListener listen = new ElectionListener("ElectionListener",share);
 			ElectionMonitor monitor = new ElectionMonitor("ElectionMonitor",share);
-			
-			
-		
 			g.start();
 			monitor.start();
 			listen.runListener();

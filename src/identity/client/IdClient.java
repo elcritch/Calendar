@@ -280,10 +280,10 @@ public class IdClient
 			//System.exit(0);
 			if (checkArgs("-c","-p"))
 			{
-				System.out.println("Hello........");
+				
 				user = getArg("-c");				
 				// now check for real name
-				String [] split = user.split("\\s+",1);
+				String [] split = user.split("\\s+",2);
 				if (split.length == 2) {
 					user = split[0];
 					real = split[1];
@@ -297,6 +297,7 @@ public class IdClient
 			// switch 1
 			else if (checkArgs("-l"))
 			{
+				user = getArg("-l");
 				type = 1;
 			}
 			// switch 2
@@ -346,7 +347,7 @@ public class IdClient
 
 				user = getArg("-u");
 				pass = getArg("-p");
-
+			   
 				calentry = new CalendarEntry(null, null, datetime, status, getArg("-des"), duration);
 				type = 5;
 			}
@@ -364,11 +365,11 @@ public class IdClient
 			}
 			// switch 7
 			/* show calendar entry */			
-			else if (checkArgs("-s","-u","-p","-l,","-rusr"))
+			else if (checkArgs("-s","-u","-p","-lv,","-rusr"))
 			{
 				// show user info as requested from server
 					System.out.println("Show calendar");
-					System.out.println("val = "+getArg("-l"));
+					System.out.println("val = "+getArg("-lv"));
 					/* Display remote user's calendar entries */
 					user = getArg("-u");
 					pass = getArg("-p");
@@ -376,7 +377,7 @@ public class IdClient
 					
 					type = 7;
 			} // show user info from local?
-			else if  (checkArgs("-s","-u","-p","-l,","-rusr") 	) 
+			else if  (checkArgs("-s","-u","-p") )
 			{
 				System.out.println("Show calendar personal");
 				/* Display user's local calendar entries */
@@ -388,7 +389,7 @@ public class IdClient
 			
 			// switch 8
 			/* Display remote user's free entries */					
-			else if  (checkArgs("-free","-u","-p","-l,","-rusr","-st","-et") 	) 
+			else if  (checkArgs("-free","-u","-p","-rusr","-st","-et") 	) 
 			{
 					user = getArg("-u");
 					pass = getArg("-p");
@@ -457,6 +458,7 @@ public class IdClient
 				UUID uniqueid = userdb.getUniqueUUID();
 				options = options.setUUID(uniqueid);
 				options = options.setMd5passwd(password(options.md5passwd, options.uuid));
+				
 				result = userdb.createUUID(options);
 				System.out.println("Created user: " + printUser(result));
 				break;
@@ -501,16 +503,21 @@ public class IdClient
 			case 5:
 				/* Create calendar entry */
 				result = userdb.lookupUUID(options.username);
+				UUID usrid = null;
+				usrid = result.uuid;
+				
 				if (result != null)
 				{
 					int id = getNextSeqNum();
-					System.out.println("Sequence number is :" + id);
+					
 					calentry.id = new Integer(id);
 					
 					validateTime(calentry.datetime,calentry.duration);
+					options = options.setUUID(usrid);
+					System.out.println("uuid number is :" + options.uuid);
+					options = options.setMd5passwd(password(options.md5passwd, options.uuid));
 					
-					options = options.setMd5passwd(password(options.md5passwd, result.uuid));
-					// System.out.println("DEBUG: local = "+calentry);
+					
 					CalendarEntry localEntry = calentry.copy();
 					// System.out.println("DEBUG: local = "+localEntry);
 					calentry.privatizeDescr();
@@ -702,7 +709,7 @@ public class IdClient
 		alternates.put( "--reverse-lookup", "-r"  );
 		alternates.put("--modify",          "-m"  );
 		alternates.put("--get",             "-g"  );
-		alternates.put("--delete",          "-d"  );
+		alternates.put("--del",          "-d"  );
 		alternates.put("--show",            "-s"  );
 
 		alternates.put("--password",        "-p"  );

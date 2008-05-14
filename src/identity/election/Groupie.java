@@ -1,5 +1,7 @@
 package identity.election;
 
+import identity.server.SharedData;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -169,6 +171,7 @@ public class Groupie extends Thread
 	private int generateChecksum() {
 		// try using the sum of the servers hashcode with the current coord ip address
 		int serhs = servers.hashCode();
+		System.out.println("coordinator ip is :"+shared.clock.getCoordInetAddress());
 		int crdhs = (shared.clock.getCoordInetAddress()==null)? 0: shared.clock.getCoordInetAddress().hashCode();
 		return serhs + crdhs;
 	}

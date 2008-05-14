@@ -1,10 +1,20 @@
-package identity.server;
-
+ package identity.server;
+ import identity.election.ElectionLock;
 import identity.calendar.CalendarDBServer;
 import identity.calendar.CalendarEntry;
+import identity.election.CoordLock;
+import identity.election.ElectionListener;
+import identity.election.ElectionLock;
+import identity.election.ElectionMonitor;
+import identity.election.Groupie;
+import identity.election.PrintColor;
+import identity.election.ServerList;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -120,6 +130,37 @@ public class IdentityServer implements IdentityUUID
 			th.printStackTrace();
 			System.out.println("Exception occurred: " + th);
 		}
+		try
+		{
+			SharedData share =new SharedData();
+			ElectionLock lock = new ElectionLock();
+			InetAddress selfIp = InetAddress.getLocalHost();
+			PrintColor.ansi = true;
+			
+			share.elock = lock;
+			share.selfaddress = selfIp;
+			share.servers =  new ServerList(selfIp);
+			share.clock = new CoordLock();
+			Groupie g = new Groupie(share);
+			System.out.println("Local ip addr :"+selfIp);
+			
+			ElectionListener listen = new ElectionListener("ElectionListener",share);
+			ElectionMonitor monitor = new ElectionMonitor("ElectionMonitor",share);
+			g.start();
+			monitor.start();
+			listen.runListener();
+			
+
+		}
+		catch (SocketException e)
+		{
+			e.printStackTrace();
+		}
+		catch (UnknownHostException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 
@@ -166,10 +207,10 @@ public class IdentityServer implements IdentityUUID
 		if (userdb.containsKey(newUser.uuid))
 			throw new UserInfoException("UUID already in database. Please call getUniqueUUID() then retry. ",2);
 			
-		System.out.println("Added user to userdb");
+		//System.out.println("Added user to userdb :"+newUser.md5passwd);
 		userdb.put(newUser.uuid, newUser);
 		UserInfo test = userdb.get(newUser.uuid); 
-		System.err.println("Created: " + newUser);
+		System.err.println("Created: " );
 
 		return UserInfo.scrubPassword(test);
 	}
@@ -248,7 +289,9 @@ public class IdentityServer implements IdentityUUID
 		
 		if (orig == null)
 			throw new UserInfoException("Cannot find given Username",2);
-		if (!reqUserInfo.md5passwd.equals( orig.md5passwd))
+
+		
+		if (!(reqUserInfo.md5passwd.equals( orig.md5passwd)))
 			throw new UserInfoException("Incorrect Password! (DEBUG) "+reqUserInfo.md5passwd+" orig: "+orig.md5passwd,0);
 		// now create new UserInfo with merged data.
 		UserInfo noveluser = new UserInfo(
@@ -275,15 +318,7 @@ public class IdentityServer implements IdentityUUID
 		// we dump the entire array
 		// then scrub the passwords
 		// then return them.
-		         try {
-			 System.out.println("dont disturb... i am sleeping");
-			 Thread.sleep(1000);
-			} 
-			catch (InterruptedException e)
-			{
-				e.printStackTrace();
 
-				}
 		UserInfo[] tmp = userDBwrapper.toArray(); 
 		for (int i=0; i<tmp.length; ++i) {
 			tmp[i] = UserInfo.scrubPassword(tmp[i]);
@@ -355,10 +390,14 @@ public class IdentityServer implements IdentityUUID
 		
 		// get user
 		serverauth = getServerUserInfo(auth);
+		//serverauth = userdb.get(auth.uuid); 		
 		
 		if ( serverauth == null )
 			throw new UserInfoException("No UserInfo found!",2);
 		
+//		System.out.println("received password is "+auth.md5passwd);
+//		System.out.println("Original password is "+serverauth.md5passwd);
+
 		if (!serverauth.md5passwd.equals( auth.md5passwd))
 			throw new UserInfoException("Incorrect Password! (DEBUG) "+auth.md5passwd+" orig: "+auth.md5passwd,0);
 		else
@@ -386,6 +425,7 @@ public class IdentityServer implements IdentityUUID
 			throws UserInfoException, RemoteException 
 	{
 		boolean retval = true;
+//		System.out.println("Received passwd :"+auth.md5passwd);
 		UserInfo orig = authenitcate(auth);
 		if ( orig == null)
 			return false;
@@ -466,10 +506,10 @@ public class IdentityServer implements IdentityUUID
 			ConcurrentHashMap<Integer, CalendarEntry> userhm = caldb.getHashUUID(val.uuid);
 			long time_slice = 1 * 60 * 60 * 1000;
 			int slot_num = (int) ((req_Stop_time - req_Start_time) / time_slice);
-			boolean[] timeArray = new boolean[slot_num];
+			boolean[] timeArray = new boolean[slot_num+1];
 			
 			ArrayList<Date> Datelist = new ArrayList<Date>(slot_num);
-			for (int i = 0; i < slot_num; i++)
+			for (int i = 0; i <=slot_num; i++)
 			{
 				timeArray[i] = true;
 			}
@@ -481,6 +521,13 @@ public class IdentityServer implements IdentityUUID
 				long file_End_Time = file_Start_Time + file_dur_milliSec;
 				int pos1 = (int) ((file_Start_Time - req_Start_time) / time_slice);
 				int pos2 = (int) ((file_End_Time - req_Start_time) / time_slice);
+				
+//				System.out.println("Start time :"+file_Start_Time);
+//				System.out.println("Stop time :"+file_End_Time);
+//				System.out.println("Req Start time :"+req_Start_time);
+//				System.out.println("Req Stop time :"+file_End_Time);
+//				System.out.println("Pos1  :"+pos1);
+//				System.out.println("Pos2  :"+pos2);
 				if ((pos1 >= 0 && pos1 <= slot_num))
 				{
 					timeArray[pos1] = false;
@@ -492,8 +539,6 @@ public class IdentityServer implements IdentityUUID
 					System.out.println("Slot :"+pos2+ "Occupied");
 				}
 			}
-			String dfr = "MM/dd/yyyy hh:mma";
-			SimpleDateFormat formatter = new SimpleDateFormat(dfr);
 			
 
 			for (int i = 0; i < slot_num; i++)
