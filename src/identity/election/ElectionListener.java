@@ -1,5 +1,7 @@
 package identity.election;
 
+import identity.server.SharedData;
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;

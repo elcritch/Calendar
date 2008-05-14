@@ -378,9 +378,15 @@ class ServerConnection extends Thread implements Types
 					 while (s.isConnected()) {
 						dhm = (DHmsg) connect_in.readUnshared();
 					}
-						
-					}
-				} 
+				} catch (EOFException e) {
+					
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 

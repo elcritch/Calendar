@@ -1,5 +1,7 @@
 package identity.election;
 
+import identity.server.SharedData;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;

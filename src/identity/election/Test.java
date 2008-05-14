@@ -2,6 +2,8 @@ package identity.election;
 
 
 
+import identity.server.SharedData;
+
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -13,7 +15,7 @@ public class Test
 	{
 		try
 		{
-			SharedData share =new SharedData();
+			SharedData share = new SharedData();
 			ElectionLock lock = new ElectionLock();
 			InetAddress selfIp = InetAddress.getLocalHost();
 			PrintColor.ansi = true;

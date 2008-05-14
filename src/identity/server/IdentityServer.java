@@ -46,6 +46,7 @@ public class IdentityServer implements IdentityUUID
 	 */
 	private static final long serialVersionUID = 2503049572587527151L;
 	private static int registryPort = 5299;
+	private String name;
 
    // private String name;
    // private UserInfoDataBase userDBwrapper;
