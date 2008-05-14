@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+DHMSTest.py
+
+Created by Jaremy Creechley on 2008-05-14.
+Copyright (c) 2008 __MyCompanyName__. All rights reserved.
+"""
+
+import sys
+import os
+import random
+
+from identity import *
+from java.util import *
+
+import java
+
+# from identity.calendar import *
+# from identity.client import *
+from identity.distributed import *
+# from identity.election import *
+# from identity.server import *
+
+def mkent():
+	# UUID uuid
+	# Integer id 
+	# Date datetime 
+	# String status 
+	# String descr 
+	# int duration 
+	uuid = java.util.UUID.randomUUID()
+	id = random.randint(0,1000)
+	datetime = None
+	status = "status"
+	desc = "description"
+	dur = 90
+	calentry = calendar.CalendarEntry(uuid, id, datetime, status, desc, dur);
+	return calentry
+	
+# os.chdir("../")
+data = server.SharedData()
+data.share = ArrayList()
+data.share.add( InetAddress.getLocalHost().getHostAddress() )
+dh = DistributedHash(data)
+
+
+cal = mkent()
+dhmc = DHM_cal(ADD)
+
