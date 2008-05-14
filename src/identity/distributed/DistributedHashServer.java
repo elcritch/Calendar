@@ -8,6 +8,7 @@ package identity.distributed;
  */
 
 import identity.calendar.CalendarDBServer;
+import identity.distributed.ServerConnection.ProcessException;
 import identity.election.PrintColor;
 import identity.server.SharedData;
 import identity.server.UserInfoDataBase;
@@ -15,6 +16,11 @@ import identity.server.UserInfoDataBase;
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import sun.misc.PerformanceLogger;
+import sun.tools.tree.CastExpression;
 
 
 public class DistributedHashServer extends Thread
@@ -60,7 +66,7 @@ public class DistributedHashServer extends Thread
 			while (true) {
 				client = ss.accept();
 				System.out.println("Received connect from " + client.getInetAddress());
-				new ServerConnection(client, share).start();
+				new ServerConnection(client, port, share).start();
 			}
 		}
 		catch  (IOException e) {
@@ -88,11 +94,13 @@ class ServerConnection extends Thread implements Types
 	ObjectInputStream stream_in;
 	ObjectOutputStream stream_out;
 	private SharedData share;
+	private int port;
 
-	ServerConnection (Socket client, SharedData share) throws SocketException
+	ServerConnection (Socket client, int port, SharedData share) throws SocketException
 	{
 		this.client = client;
 		this.share = share;
+		this.port = port;
 		setPriority(NORM_PRIORITY - 1);
 		System.out.println("Created thread " + this.getName());
 	}
@@ -136,8 +144,11 @@ class ServerConnection extends Thread implements Types
 
 
 	 */
-
-	private void process(DHM_vote vote) {
+	/**
+	 * 	 
+	 * @throws IOException 
+	 */
+	private void process(DHM_vote vote) throws IOException {
 		try {
 			switch (vote.type) {
 			case   VOTE_BEGIN: 
@@ -154,49 +165,55 @@ class ServerConnection extends Thread implements Types
 			default :
 				break;
 			}
-			catch (ProcessException pe) {
-				PrintColor.yellow("while processing vote message of type: "+vote.type)
-				PrintColor.yellow(pe);
-			}
+		}
+		catch (ProcessException pe) {
+			PrintColor.yellow("while processing vote message of type: "+vote.type);
+			PrintColor.yellow(pe);
+			stream_out.writeUnshared(pe);
+		}
 		}
 
 		private void process(DHM_checkpoint chkpnt) {
 		}
 
+		/* ------------------------------------------------------------------------------- */
+				private void performVoteBegin(DHM_vote vote) throws ProcessException {
+					if (share.clock.checkCoordinator() ) {
+						// begin vote process
+						// send vote_request objects to all servers
+		
+						sendAndReceiveAll(vote);
+		
+						// receive responses back
+						
+						// if all checkout, then send vote_commit
+		
+		
+					} else {
+						// not coordinator, send back error message
+						DHM_error error = new DHM_error(vote,"Not Coordinator. Cannot begin a commit process.");
+						throw new ProcessException(error);
+					}
+					
+		//			try {
+		//			} catch (IOException e) {
+		//			e.printStackTrace();
+		//			DHM_error error = new DHM_error(vote,"IOException");
+		//			throw new ProcessException(error);
+		//			}
+				}
+
+		@SuppressWarnings("unused")
 		private void process(DHmsg msg) {
 			PrintColor.red("Cannot Process Stand DHM: NOT IMPLEMENTED");
 		}
-
-		/* ------------------------------------------------------------------------------- */
-		private void performVoteBegin(DHM_vote vote) {
-			if (share.clock.amCoordinator() ) {
-				// begin vote process
-				// send vote_request objects to all servers
-
-				sendAll();
-				// receive responses back
-				// if all checkout, then send vote_commit
-			} else {
-				// not coordinator, send back error message
-				DHM_error error = new DHM_error(vote,"Not Coordinator. Cannot begin a commit process.")
-				stream_out.writeObject(error);
-			}
-
-		}
-
-
-
-		/* ------------------------------------------------------------------------------- */
 
 		public void run()
 		{
 			// we connect to client, read in their message and process it. Then we leave.
 			try {
 				stream_in = new ObjectInputStream(client.getInputStream());
-				stream_out = new ObjectInputStream(client.getOutputStream());
-
-				// check is socket is alive still
-				stillAlive = client.isConnected();
+				stream_out = new ObjectOutputStream(client.getOutputStream());
 
 				// wait for user response
 				Object obj = stream_in.readUnshared();
@@ -216,7 +233,6 @@ class ServerConnection extends Thread implements Types
 
 			}
 			catch (EOFException e3) { // Normal EOF
-				thread_exit();
 			}
 			catch (IOException e) {
 				System.out.println("I/O error " + e); // I/O error
@@ -228,17 +244,15 @@ class ServerConnection extends Thread implements Types
 				System.out.println(e);
 			}
 
-			// nicely exit
-			thread_exit();
 		}
 
 
 		private void processRequest(Object request) throws IOException
 		{
 			if (request instanceof DHmsg) {
-				Request msg = (DHmsg) request;
+				DHmsg msg = (DHmsg) request;
 
-				System.out.println("Request type: " + msg.getClassName() );
+				System.out.println("Request type: " + msg.getClass().getSimpleName());
 
 				if (msg instanceof DHM_vote) {
 					PrintColor.yellow("Processing DHM_vote");
@@ -252,7 +266,8 @@ class ServerConnection extends Thread implements Types
 				}
 			}
 			else {
-				PrintColor.yellow("Unknown message received: "+request.getClass() + " from: "+client.getClientAddr());
+				PrintColor.yellow("Unknown message received: "+request.getClass() 
+						+ " from: "+client.getInetAddress() );
 			}
 			return;
 		}
@@ -260,32 +275,46 @@ class ServerConnection extends Thread implements Types
 		/* ------------------------------------------------------------------------------- */
 
 		// methods for distributed messages
-		protected void sendAll(DHmsg dhm)
+		protected DHmsg[] sendAndReceiveAll(DHmsg dhm) throws ProcessException
 		{
 			// this method will send the message to the coord queue
-			InetAddress[] servers = share.servers.getArray();
+			InetAddress[] servers = share.servers.toArray();
 
 			// connect to each server in the list, including our own
-			Sender tmp;
-			for (InetAddress server : servers) {
+			Sender[] sender = new Sender[servers.length];
+			DHmsg[] results = new DHmsg[servers.length];
+			Semaphore semaphore = new Semaphore(servers.length);
+			
+			for (int i = 0; i<servers.length; i++) {
 				// we don't need to do error checking here, the server will take care of that. 
-				tmp = new Sender(server,dhm);
-				tmp.start();
+				sender[i] = new Sender(servers[i],dhm, semaphore);
+				sender[i].start();
 			}
 			// sleep for a bit. we could join all threads, but this should give us enough delay?
-			tmp.join(200);
-
-			// send the VOTE_BEGIN message to the coordinator
-			sendDHM(share.coordinator, new DHM(VOTE_BEGIN, dhm.lamport));
-
+			try {
+				System.out.println("DEBUG THREAD: Trying to join sendAndReceiveAll threads");
+				if (!semaphore.tryAcquire(servers.length, 1000, TimeUnit.MILLISECONDS)) {
+					throw new ProcessException("Couldn't aquire locks for message", dhm);
+				}
+				
+				int i = 0;
+				for (Sender sent : sender) {
+					results[i++] = sent.result;
+				}
+				return results;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return null;
+			}
 		}
 
-		protected void sendDHM(InetAddress host, DHmsg dhm) throws SocketTimeoutException {
+		protected void sendDHM(InetAddress host, DHmsg msg) throws SocketTimeoutException {
 			try {
 				Socket s = new Socket(host, port);
 				OutputStream out = s.getOutputStream();
 				ObjectOutputStream outObj = new ObjectOutputStream(out);
-				outObj.writeUnsharedObject(msg);
+				outObj.writeUnshared(msg);
 				outObj.close();
 				out.close();
 			}
@@ -296,33 +325,56 @@ class ServerConnection extends Thread implements Types
 		}
 
 		class Sender extends Thread {
-			DHmsg msg;
-			InetAddress host;
+			DHmsg msg = null;
+			InetAddress host = null;
+			DHmsg result = null;
+			private Semaphore semaphore = null;
+			
 			Sender(InetAddress host, DHmsg msg) { 
 				this.msg = msg;
 				this.host = host;
 			}
+			public Sender(InetAddress inetAddress, DHmsg dhm, Semaphore semaphore) {
+				this(inetAddress, dhm);
+				this.semaphore  = semaphore;
+			}
 			public void run() {
 				try {
+					semaphore.acquire();
 					Socket s = new Socket(host, port);
-					OutputStream out = s.getOutputStream();
-					ObjectOutputStream outObj = new ObjectOutputStream(out);
-					outObj.writeUnshared(msg);
-					outObj.close();
-					out.close();
-					thread_exit();
+					ObjectInputStream connect_in = new ObjectInputStream(s.getInputStream());
+					ObjectOutputStream connect_out = new ObjectOutputStream(s.getOutputStream());
+
+					connect_out.writeUnshared(msg);
+					connect_out.close();
+					
+					result = (DHmsg) connect_in.readUnshared();
+				}
+				catch (ClassCastException cce) {
+					result = null;
 				}
 				catch (IOException e1) {
 					PrintColor.red("error: sending DHM: "+msg+" to: "+host);
 					System.out.println(e1);
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			} 	      
 		}
 
 		class ProcessException extends Exception {
+			private static final long serialVersionUID = 839187662031418327L;
 			String error;
 			DHmsg msg;
-			ProcessEception(String error, DHmsg msg) {
+			ProcessException(DHM_error errormsg) {
+				this.error = errormsg.error_msg; 
+				this.msg = errormsg;
+			}
+			ProcessException(String error, DHmsg msg) {
 				this.error = error; this.msg = msg;
 			}
 			public String toString() {

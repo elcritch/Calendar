@@ -89,5 +89,8 @@ public class CoordLock
 		return CoordLock.lamport.incrementAndGet();
 	}
 	
+	public synchronized boolean checkCoordinator() {
+	   return coord;
+	}
 }
 
