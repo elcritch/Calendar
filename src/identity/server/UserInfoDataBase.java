@@ -23,7 +23,7 @@ public class UserInfoDataBase
 	private String dbFileName;
 
 	@SuppressWarnings("unchecked") // ha, gotta love Java! ;)
-	UserInfoDataBase( String filename )
+	public UserInfoDataBase( String filename )
 	{
 		dbFileName = filename;
 		dbHash = new ConcurrentHashMap<UUID, UserInfo>(50);

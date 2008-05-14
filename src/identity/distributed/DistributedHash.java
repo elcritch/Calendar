@@ -5,7 +5,12 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.UUID;
 
+import identity.calendar.CalendarEntry;
+import identity.election.PrintColor;
+import identity.server.SharedData;
 import identity.server.UserInfo;
 
 public class DistributedHash implements Types
@@ -19,37 +24,42 @@ public class DistributedHash implements Types
 	}
 
 	// methods for distributed commits
-	protected void sendAll(DHmsg dhm)
+	protected void sendAll(DHmsg dhm) throws SocketTimeoutException
 	{
 		// this method will send the message to the coord queue
-		InetAddress[] servers = share.servers.getArray();
+		InetAddress[] servers = share.servers.toArray();
 		
 		// connect to each server in the list, including our own
-		Sender tmp;
+		Sender tmp = null;
 		for (InetAddress server : servers) {
 		   // we don't need to do error checking here, the server will take care of that. 
 		   tmp = new Sender(server,dhm);
 		   tmp.start();
 		}
 		// sleep for a bit. we could join all threads, but this should give us enough delay?
-		tmp.join(200);
+		try {
+			tmp.join(200);
+		} catch (InterruptedException e) {
+			// ignore error
+		}
 		
 		// send the VOTE_BEGIN message to the coordinator
-		sendDHM(share.coordinator, new DHM(VOTE_BEGIN, dhm.lamport));
+		/* note: this will result in a socketimeout error if unsucessfull */
+		sendDHM(share.clock.getCoordInetAddress(), new DHM_vote(VOTE_BEGIN));
 		
 	}
 	
-	protected void sendDHM(InetAddress host, DHmsg dhm) throws SocketTimeoutException {
+	protected void sendDHM(InetAddress host, DHmsg msg) throws SocketTimeoutException {
       try {
 			Socket s = new Socket(host, port);
 			OutputStream out = s.getOutputStream();
-			ObjectOutputStream outObj = new ObjectOutputStream(out);
-			outObj.writeUnsharedObject(msg);
-			outObj.close();
+			ObjectOutputStream stream_out = new ObjectOutputStream(out);
+			stream_out.writeUnshared(msg);
+			stream_out.close();
 			out.close();
 		}
 		catch (IOException e1) {
-		   PrintColor.red("error: sending DHM: "+msg+" to: "+host);
+		    PrintColor.red("error: sending DHM: "+msg+" to: "+host);
 			System.out.println(e1);
 		}	   
 	}
@@ -69,7 +79,6 @@ public class DistributedHash implements Types
    			outObj.writeUnshared(msg);
    			outObj.close();
    			out.close();
-   			thread_exit();
    		}
    		catch (IOException e1) {
    		   PrintColor.red("error: sending DHM: "+msg+" to: "+host);
@@ -82,27 +91,44 @@ public class DistributedHash implements Types
    /* ---------------------------------------------------------------------------------- */
 	// methods for UserInfo entries
 	public UserInfo UserInfoPut (UUID uuid, UserInfo user)
-	{}
+	{
+		return null;
+	}
 	public UserInfo UserInfoGet (UUID uuid)
-	{}
+	{
+		return null;}
 	public UserInfo UserInfoQuickUUID (String username)
-	{}
+	{
+		return null;}
 	public UserInfo UserInfoDel (UUID uuid)
-	{}
+	{
+		return null;
+	}
 
 	// methods for calendar entries
 	public boolean addEntry(CalendarEntry entry)
-	{}
+	{
+		return false;
+	}
 
 	public boolean delEntry(CalendarEntry entry)
-	{}
+	{
+		return false;
+	}
+	
 	public boolean delEntry(UUID uuid, Integer keyid)
-	{}
+	{
+		return false;
+	}
 
 	public CalendarEntry getEntry(CalendarEntry entry)
-	{}
+	{
+		return entry;
+	}
 	public CalendarEntry getEntry(UUID uid, Integer key)
-	{}
+	{
+		return null;
+	}
 	
 	
 	
